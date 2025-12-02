@@ -47,7 +47,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             <View style={styles.header}>
               <TouchableOpacity
                 style={styles.backButton}
-                onPress={() => navigation.goBack()}
+                onPress={() => navigation.navigate("AuthLanding")}
               >
                 <Ionicons name="chevron-back" size={24} color={COLORS.text} />
               </TouchableOpacity>
@@ -129,13 +129,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: SPACING.md,
     marginBottom: SPACING.xl,
+    paddingLeft: -SPACING.huge,
+    marginLeft: -SPACING.md,
   },
   backButton: {
     width: 40,
     height: 40,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: SPACING.sm,
+    marginTop: -SPACING.xl,
   },
   headerTextContainer: {
     flex: 1,
