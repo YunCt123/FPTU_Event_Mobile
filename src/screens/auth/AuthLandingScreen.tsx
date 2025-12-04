@@ -1,6 +1,14 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, Animated } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Animated,
+} from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RouteProp } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   COLORS,
@@ -10,14 +18,18 @@ import {
   RADII,
   SIZES,
 } from "../../utils/theme";
-import img from "../../assets/fpt_logo.png";
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const img = require("../../assets/fpt_logo.png");
+import { AuthStackParamList } from "../../types/navigation";
 
 type AuthLandingScreenProps = {
-  navigation: NativeStackNavigationProp<any>;
+  navigation: NativeStackNavigationProp<AuthStackParamList, "AuthLanding">;
+  route: RouteProp<AuthStackParamList, "AuthLanding">;
 };
 
 const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
   navigation,
+  route,
 }) => {
   const logoSlideAnim = useRef(new Animated.Value(-300)).current;
   const titleSlideAnim = useRef(new Animated.Value(-300)).current;
@@ -26,16 +38,16 @@ const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
   useEffect(() => {
     Animated.sequence([
       Animated.parallel([
-      Animated.timing(logoSlideAnim, {
-        toValue: 1,
-        duration: 2000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(titleSlideAnim, {
-        toValue: 1,
-        duration: 2000,
-        useNativeDriver: true,
-      }),
+        Animated.timing(logoSlideAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(titleSlideAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
       ]),
       Animated.timing(buttonFadeAnim, {
         toValue: 1,
@@ -44,6 +56,10 @@ const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
       }),
     ]).start();
   }, []);
+
+  const registerMessage = (
+    route.params as { registerMessage?: string } | undefined
+  )?.registerMessage;
 
   return (
     <View style={styles.container}>
@@ -55,19 +71,23 @@ const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
       >
         <View style={styles.content}>
           <View style={styles.logoContainer}>
-            <Animated.View style={{ transform: [{ translateY: logoSlideAnim }]}}>
+            <Animated.View
+              style={{ transform: [{ translateY: logoSlideAnim }] }}
+            >
               <Image source={img} style={{ width: 220, height: 220 }} />
             </Animated.View>
             <Animated.Text
               style={[
                 styles.title,
-                { transform: [{ translateY: titleSlideAnim }]},
+                { transform: [{ translateY: titleSlideAnim }] },
               ]}
             >
               FPT University Events
             </Animated.Text>
           </View>
-          <Animated.View style={[styles.buttonContainer, { opacity: buttonFadeAnim }]}>
+          <Animated.View
+            style={[styles.buttonContainer, { opacity: buttonFadeAnim }]}
+          >
             <TouchableOpacity
               style={styles.loginButton}
               onPress={() => navigation.navigate("Login")}
@@ -82,6 +102,12 @@ const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
               <Text style={styles.registerButtonText}>Đăng ký</Text>
             </TouchableOpacity>
           </Animated.View>
+
+          {registerMessage && (
+            <View style={styles.messageContainer}>
+              <Text style={styles.messageText}>{registerMessage}</Text>
+            </View>
+          )}
         </View>
       </LinearGradient>
     </View>
@@ -147,6 +173,14 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontSize: FONTS.bodyLarge,
     fontWeight: "600",
+  },
+  messageContainer: {
+    marginTop: SPACING.md,
+  },
+  messageText: {
+    fontSize: FONTS.body,
+    color: "green",
+    textAlign: "center",
   },
 });
 

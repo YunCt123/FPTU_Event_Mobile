@@ -21,20 +21,60 @@ import {
   SHADOWS,
   SIZES,
 } from "../../utils/theme";
+import { AuthStackParamList } from "../../types/navigation";
 
 type RegisterScreenProps = {
-  navigation: NativeStackNavigationProp<any>;
+  navigation: NativeStackNavigationProp<AuthStackParamList, "Register">;
 };
 
 const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
-  const [fullName, setFullName] = useState("");
+  const [userName, setUserName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [gender, setGender] = useState<"male" | "female">("male");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const handleRegister = () => {
-    // TODO: Implement register logic
-    console.log("Register:", { fullName, email, password, confirmPassword });
+  const isPasswordMatch =
+    !confirmPassword || !password || password === confirmPassword;
+
+  const handleGoNext = () => {
+    if (
+      !firstName ||
+      !lastName ||
+      !email ||
+      !password ||
+      !confirmPassword ||
+      !phoneNumber ||
+      !userName
+    ) {
+      setError("Vui lòng nhập đầy đủ các thông tin bắt buộc (*) ở bước 1");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Mật khẩu xác nhận không khớp");
+      return;
+    }
+
+    const genderBoolean = gender === "male";
+    const isFptEmail = email.toLowerCase().endsWith("@fpt.edu.vn");
+    setError(null);
+    navigation.navigate("RegisterAdditional", {
+      userName,
+      firstName,
+      lastName,
+      email,
+      password,
+      gender: genderBoolean,
+      phoneNumber,
+      requireStudentCard: !isFptEmail,
+    });
   };
 
   return (
@@ -67,57 +107,147 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
               </View>
 
               <View style={styles.form}>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Họ và tên</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Nhập họ và tên"
-                    value={fullName}
-                    onChangeText={setFullName}
-                    autoCapitalize="words"
-                  />
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Thông tin tài khoản</Text>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Tên đăng nhập *</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Nhập tên đăng nhập"
+                      value={userName}
+                      onChangeText={setUserName}
+                      autoCapitalize="none"
+                    />
+                  </View>
+
+                  <View style={styles.inlineRow}>
+                    <View style={[styles.inputContainer, styles.inlineItem]}>
+                      <Text style={styles.label}>Họ *</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Họ"
+                        value={firstName}
+                        onChangeText={setFirstName}
+                        autoCapitalize="words"
+                      />
+                    </View>
+                    <View style={[styles.inputContainer, styles.inlineItem]}>
+                      <Text style={styles.label}>Tên *</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Tên"
+                        value={lastName}
+                        onChangeText={setLastName}
+                        autoCapitalize="words"
+                      />
+                    </View>
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Email *</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Nhập email của bạn"
+                      value={email}
+                      onChangeText={setEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                  </View>
                 </View>
 
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Email</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Nhập email của bạn"
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
+                <View style={styles.section}>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Mật khẩu *</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Nhập mật khẩu"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry
+                      autoCapitalize="none"
+                    />
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Xác nhận mật khẩu *</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Nhập lại mật khẩu"
+                      value={confirmPassword}
+                      onChangeText={setConfirmPassword}
+                      secureTextEntry
+                      autoCapitalize="none"
+                    />
+                    {!isPasswordMatch && (
+                      <Text style={styles.inlineError}>
+                        Mật khẩu xác nhận không khớp
+                      </Text>
+                    )}
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Số điện thoại *</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Nhập số điện thoại"
+                      value={phoneNumber}
+                      onChangeText={setPhoneNumber}
+                      keyboardType="phone-pad"
+                    />
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Giới tính</Text>
+                    <View style={styles.genderContainer}>
+                      <TouchableOpacity
+                        style={[
+                          styles.genderOption,
+                          gender === "male" && styles.genderOptionActive,
+                        ]}
+                        onPress={() => setGender("male")}
+                      >
+                        <Text
+                          style={[
+                            styles.genderOptionText,
+                            gender === "male" && styles.genderOptionTextActive,
+                          ]}
+                        >
+                          Nam
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.genderOption,
+                          gender === "female" && styles.genderOptionActive,
+                        ]}
+                        onPress={() => setGender("female")}
+                      >
+                        <Text
+                          style={[
+                            styles.genderOptionText,
+                            gender === "female" &&
+                              styles.genderOptionTextActive,
+                          ]}
+                        >
+                          Nữ
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
                 </View>
 
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Mật khẩu</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Nhập mật khẩu"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                    autoCapitalize="none"
-                  />
-                </View>
-
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Xác nhận mật khẩu</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Nhập lại mật khẩu"
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    secureTextEntry
-                    autoCapitalize="none"
-                  />
-                </View>
+                {error && <Text style={styles.errorText}>{error}</Text>}
+                {successMessage && (
+                  <Text style={styles.successText}>{successMessage}</Text>
+                )}
 
                 <TouchableOpacity
-                  style={styles.registerButton}
-                  onPress={handleRegister}
+                  style={[styles.registerButton, loading && { opacity: 0.7 }]}
+                  onPress={loading ? undefined : handleGoNext}
+                  disabled={loading}
                 >
                   <Text style={styles.registerButtonText}>Đăng ký</Text>
                 </TouchableOpacity>
@@ -184,7 +314,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   form: {
-    gap: SPACING.lg,
+    gap: SPACING.xl,
   },
   inputContainer: {
     gap: SPACING.sm,
@@ -217,6 +347,16 @@ const styles = StyleSheet.create({
     fontSize: FONTS.bodyLarge,
     fontWeight: "600",
   },
+  errorText: {
+    color: "red",
+    marginTop: SPACING.sm,
+    fontSize: FONTS.body,
+  },
+  successText: {
+    color: "green",
+    marginTop: SPACING.sm,
+    fontSize: FONTS.body,
+  },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
@@ -229,6 +369,53 @@ const styles = StyleSheet.create({
   },
   loginLink: {
     fontSize: FONTS.body,
+    color: COLORS.primary,
+    fontWeight: "600",
+  },
+  section: {
+    gap: SPACING.md,
+  },
+  sectionTitle: {
+    fontSize: FONTS.bodyLarge ?? FONTS.body,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: SPACING.sm,
+  },
+  inlineRow: {
+    flexDirection: "row",
+    gap: SPACING.md,
+  },
+  inlineItem: {
+    flex: 1,
+  },
+  inlineError: {
+    fontSize: FONTS.caption ?? FONTS.body,
+    color: "red",
+    marginTop: SPACING.xs,
+  },
+  genderContainer: {
+    flexDirection: "row",
+    gap: SPACING.md,
+  },
+  genderOption: {
+    flex: 1,
+    height: SIZES.button.height * 0.8,
+    borderRadius: RADII.button,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    backgroundColor: COLORS.white,
+  },
+  genderOptionActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: "#E8F3FF",
+  },
+  genderOptionText: {
+    fontSize: FONTS.body,
+    color: COLORS.text,
+  },
+  genderOptionTextActive: {
     color: COLORS.primary,
     fontWeight: "600",
   },
