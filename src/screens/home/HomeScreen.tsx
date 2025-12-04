@@ -5,49 +5,47 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  COLORS,
-  SPACING,
-  FONTS,
-  RADII,
-  SHADOWS,
-} from "../../utils/theme";
-import FeaturedEventBanner, { FeaturedEvent } from "../../components/FeaturedEventBanner";
+import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
+import FeaturedEventBanner, {
+  FeaturedEvent,
+} from "../../components/FeaturedEventBanner";
+import img from "../../assets/fpt_logo.png";
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<any>;
 };
 
 const FEATURED_EVENTS: FeaturedEvent[] = [
-  { 
-    id: '1', 
-    title: 'FPT Tech Day 2025', 
-    subtitle: 'Hội thảo công nghệ lớn nhất năm',
+  {
+    id: "1",
+    title: "FPT Tech Day 2025",
+    subtitle: "Hội thảo công nghệ lớn nhất năm",
     gradientColors: COLORS.gradient_2,
-    date: '25/12/2025',
-    location: 'Hall A - Beta Building',
+    date: "25/12/2025",
+    location: "Hall A - Beta Building",
     attendees: 500,
-  }, 
-  { 
-    id: '2', 
-    title: 'Club Day: Welcome K19', 
-    subtitle: 'Ngày hội sinh viên sôi động',
+  },
+  {
+    id: "2",
+    title: "Club Day: Welcome K19",
+    subtitle: "Ngày hội sinh viên sôi động",
     color: COLORS.primary,
-    date: '10/01/2026',
-    location: 'Main Campus',
+    date: "10/01/2026",
+    location: "Main Campus",
     attendees: 300,
-  }, 
-  { 
-    id: '3', 
-    title: 'F-Talent Show', 
-    subtitle: 'Sân chơi tài năng sinh viên FPT',
-    color: '#4CAF50',
-    date: '15/02/2026',
-    location: 'FPT Arena',
+  },
+  {
+    id: "3",
+    title: "F-Talent Show",
+    subtitle: "Sân chơi tài năng sinh viên FPT",
+    color: "#4CAF50",
+    date: "15/02/2026",
+    location: "FPT Arena",
     attendees: 250,
   },
 ];
@@ -57,8 +55,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     <View style={styles.container}>
       <LinearGradient
         colors={COLORS.gradient_1}
-        start={{x: 1, y: 0.2}} 
-        end={{x: 0.2, y: 1}}
+        start={{ x: 1, y: 0.2 }}
+        end={{ x: 0.2, y: 1 }}
         style={styles.gradientBackground}
       >
         <ScrollView
@@ -67,26 +65,33 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         >
           {/* 1. Header/Chào mừng - Định danh người dùng và thông tin tổng quan vé */}
           <View style={styles.header}>
-            <View style={styles.welcomeSection}>
               <View>
-                <Text style={styles.greeting}>Xin chào!</Text>
-                <Text style={styles.userName}>Nguyễn Văn A</Text>
+                <View style= {styles.headerIcon}>
+                   <Image style={styles.logo}
+                   source={img} />
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("Profile")}
+                    style = {styles.avatar}
+                  >
+                    <Ionicons
+                      name="person-circle"
+                      size={40}
+                      color={COLORS.text}
+                    />
+                  </TouchableOpacity>
+                 
+                </View>
               </View>
-              <View style={styles.ticketInfoBadge}>
-                <Ionicons name="ticket" size={20} color={COLORS.primary} />
-                <Text style={styles.ticketCount}>3 vé</Text>
-              </View>
-            </View>
           </View>
 
           <View style={styles.content}>
             {/* 2. Sự kiện Nổi bật - Thu hút đăng ký sự kiện mới */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Sự kiện Nổi bật</Text>
-              <FeaturedEventBanner 
+              <FeaturedEventBanner
                 events={FEATURED_EVENTS}
                 onEventPress={(event) => {
-                  console.log('Event pressed:', event.title);
+                  console.log("Event pressed:", event.title);
                   navigation.navigate("Event");
                 }}
                 autoPlayInterval={2000}
@@ -101,7 +106,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   <Text style={styles.seeAllText}>Xem tất cả</Text>
                 </TouchableOpacity>
               </View>
-              
+
               <View style={styles.upcomingCard}>
                 <View style={styles.upcomingLeft}>
                   <View style={styles.upcomingDate}>
@@ -110,18 +115,32 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   </View>
                 </View>
                 <View style={styles.upcomingContent}>
-                  <Text style={styles.upcomingTitle}>Tech Talk: AI in Education</Text>
+                  <Text style={styles.upcomingTitle}>
+                    Tech Talk: AI in Education
+                  </Text>
                   <View style={styles.upcomingDetail}>
-                    <Ionicons name="time-outline" size={14} color={COLORS.text} />
+                    <Ionicons
+                      name="time-outline"
+                      size={14}
+                      color={COLORS.text}
+                    />
                     <Text style={styles.upcomingDetailText}>14:00 - 16:00</Text>
                   </View>
                   <View style={styles.upcomingDetail}>
-                    <Ionicons name="location-outline" size={14} color={COLORS.text} />
+                    <Ionicons
+                      name="location-outline"
+                      size={14}
+                      color={COLORS.text}
+                    />
                     <Text style={styles.upcomingDetailText}>Hall A</Text>
                   </View>
                 </View>
                 <TouchableOpacity style={styles.upcomingAction}>
-                  <Ionicons name="chevron-forward" size={20} color={COLORS.primary} />
+                  <Ionicons
+                    name="chevron-forward"
+                    size={20}
+                    color={COLORS.primary}
+                  />
                 </TouchableOpacity>
               </View>
 
@@ -133,18 +152,32 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   </View>
                 </View>
                 <View style={styles.upcomingContent}>
-                  <Text style={styles.upcomingTitle}>Workshop: UI/UX Design</Text>
+                  <Text style={styles.upcomingTitle}>
+                    Workshop: UI/UX Design
+                  </Text>
                   <View style={styles.upcomingDetail}>
-                    <Ionicons name="time-outline" size={14} color={COLORS.text} />
+                    <Ionicons
+                      name="time-outline"
+                      size={14}
+                      color={COLORS.text}
+                    />
                     <Text style={styles.upcomingDetailText}>09:00 - 12:00</Text>
                   </View>
                   <View style={styles.upcomingDetail}>
-                    <Ionicons name="location-outline" size={14} color={COLORS.text} />
+                    <Ionicons
+                      name="location-outline"
+                      size={14}
+                      color={COLORS.text}
+                    />
                     <Text style={styles.upcomingDetailText}>Room 301</Text>
                   </View>
                 </View>
                 <TouchableOpacity style={styles.upcomingAction}>
-                  <Ionicons name="chevron-forward" size={20} color={COLORS.primary} />
+                  <Ionicons
+                    name="chevron-forward"
+                    size={20}
+                    color={COLORS.primary}
+                  />
                 </TouchableOpacity>
               </View>
             </View>
@@ -153,11 +186,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Thao tác nhanh</Text>
               <View style={styles.quickActionsContainer}>
-                <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate("Event")}>
+                <TouchableOpacity
+                  style={styles.actionCard}
+                  onPress={() => navigation.navigate("Event")}
+                >
                   <View style={styles.actionIcon}>
-                    <Ionicons name="add-circle" size={28} color={COLORS.primary} />
+                    <Ionicons
+                      name="add-circle"
+                      size={28}
+                      color={COLORS.primary}
+                    />
                   </View>
-                  <Text style={styles.actionText}>Đăng ký{'\n'}sự kiện</Text>
+                  <Text style={styles.actionText}>Đăng ký{"\n"}sự kiện</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.actionCard}>
@@ -171,7 +211,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   <View style={styles.actionIcon}>
                     <Ionicons name="create" size={28} color={COLORS.primary} />
                   </View>
-                  <Text style={styles.actionText}>Tạo{'\n'}sự kiện</Text>
+                  <Text style={styles.actionText}>Tạo{"\n"}sự kiện</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -199,36 +239,19 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.lg,
     paddingBottom: SPACING.md,
   },
-  welcomeSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  headerIcon: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
   },
-  greeting: {
-    fontSize: FONTS.body,
-    color: COLORS.text,
-    opacity: 0.7,
-  },
-  userName: {
-    fontSize: FONTS.header,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginTop: SPACING.xs,
-  },
-  ticketInfoBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: RADII.pill,
-    gap: SPACING.xs,
-    ...SHADOWS.sm,
-  },
-  ticketCount: {
-    fontSize: FONTS.body,
-    fontWeight: '600',
-    color: COLORS.text,
+  logo: {
+    width: 60,
+    height: 60,
+    position: "absolute",
+  },  
+  avatar: {
+    position: "absolute",
+    right: 0,
   },
   content: {
     paddingHorizontal: SPACING.screenPadding,
@@ -239,43 +262,43 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: FONTS.bodyLarge,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.text,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   seeAllText: {
     fontSize: FONTS.body,
     color: COLORS.primary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   // Upcoming Events Styles
   upcomingCard: {
     backgroundColor: COLORS.white,
     borderRadius: RADII.card,
     padding: SPACING.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: SPACING.md,
     ...SHADOWS.sm,
   },
   upcomingLeft: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   upcomingDate: {
     width: 60,
     height: 60,
     borderRadius: RADII.md,
     backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   upcomingDay: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: COLORS.white,
   },
   upcomingMonth: {
@@ -288,13 +311,13 @@ const styles = StyleSheet.create({
   },
   upcomingTitle: {
     fontSize: FONTS.body,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.text,
     marginBottom: SPACING.xs,
   },
   upcomingDetail: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: SPACING.xs,
   },
   upcomingDetailText: {
@@ -305,12 +328,12 @@ const styles = StyleSheet.create({
   upcomingAction: {
     width: 32,
     height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   // Quick Actions Styles
   quickActionsContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: SPACING.md,
   },
   actionCard: {
@@ -318,7 +341,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderRadius: RADII.card,
     padding: SPACING.lg,
-    alignItems: 'center',
+    alignItems: "center",
     gap: SPACING.sm,
     ...SHADOWS.sm,
   },
@@ -327,15 +350,15 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: RADII.md,
     backgroundColor: COLORS.background,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: SPACING.xs,
   },
   actionText: {
     fontSize: FONTS.caption,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });
 
