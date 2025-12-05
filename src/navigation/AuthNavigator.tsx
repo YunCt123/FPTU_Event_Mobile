@@ -7,7 +7,6 @@ import RegisterScreen from "../screens/auth/RegisterScreen";
 import RegisterAdditionalScreen from "../screens/auth/RegisterAdditionalScreen";
 import RegisterStudentCardScreen from "../screens/auth/RegisterStudentCardScreen";
 
-
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 const AuthNavigator: React.FC = () => {
