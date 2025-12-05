@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import AuthNavigator from "./AuthNavigator";
 import MainNavigator from "./MainNavigator";
+import { STORAGE_KEYS } from "../api/api";
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -12,7 +14,27 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const RootNavigator: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [initialRoute, setInitialRoute] = useState<
+    keyof RootStackParamList | null
+  >(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+        setInitialRoute(token ? "Main" : "Auth");
+      } catch {
+        setInitialRoute("Auth");
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  if (!initialRoute) {
+    // Có thể return một splash/loading ở đây nếu muốn
+    return null;
+  }
 
   return (
     <NavigationContainer>
@@ -21,6 +43,7 @@ const RootNavigator: React.FC = () => {
         screenOptions={{
           headerShown: false,
         }}
+        initialRouteName={initialRoute}
       >
         {!isAuthenticated ? (
           <Stack.Screen name="Auth" component={AuthNavigator} />

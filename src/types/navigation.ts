@@ -1,5 +1,6 @@
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { RegisterRequest } from "./auth";
 
 export type RootStackParamList = {
     // Auth Screens
@@ -24,6 +25,19 @@ export type AuthStackParamList = {
   AuthLanding: undefined;
   Login: undefined;
   Register: undefined;
+  RegisterAdditional: {
+    userName: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    gender: boolean;
+    phoneNumber: string;
+    requireStudentCard: boolean;
+  };
+  RegisterStudentCard: {
+    basePayload: Omit<RegisterRequest, "studentCardImage">;
+  };
 };
 
 export type MainTabParamList = {
