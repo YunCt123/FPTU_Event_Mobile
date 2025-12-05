@@ -65,23 +65,21 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         >
           {/* 1. Header/Chào mừng - Định danh người dùng và thông tin tổng quan vé */}
           <View style={styles.header}>
-              <View>
-                <View style= {styles.headerIcon}>
-                   <Image style={styles.logo}
-                   source={img} />
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate("Profile")}
-                    style = {styles.avatar}
-                  >
-                    <Ionicons
-                      name="person-circle"
-                      size={40}
-                      color={COLORS.text}
-                    />
-                  </TouchableOpacity>
-                 
-                </View>
+            <View>
+              <View style={styles.headerIcon}>
+                <Image style={styles.logo} source={img} />
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("Profile")}
+                  style={styles.avatar}
+                >
+                  <Ionicons
+                    name="person-circle"
+                    size={40}
+                    color={COLORS.text}
+                  />
+                </TouchableOpacity>
               </View>
+            </View>
           </View>
 
           <View style={styles.content}>
@@ -236,7 +234,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: SPACING.screenPadding,
-    paddingTop: SPACING.lg,
+    paddingTop: SPACING.huge,
     paddingBottom: SPACING.md,
   },
   headerIcon: {
@@ -248,7 +246,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     position: "absolute",
-  },  
+  },
   avatar: {
     position: "absolute",
     right: 0,
@@ -256,14 +254,17 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: SPACING.screenPadding,
     gap: SPACING.xl,
+    paddingTop: SPACING.huge,
+    marginBottom: 100,
   },
   section: {
-    gap: SPACING.md,
+    gap: SPACING.sm,
   },
   sectionTitle: {
     fontSize: FONTS.bodyLarge,
     fontWeight: "600",
     color: COLORS.text,
+    paddingLeft: 10,
   },
   sectionHeader: {
     flexDirection: "row",

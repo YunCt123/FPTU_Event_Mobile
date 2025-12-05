@@ -23,15 +23,9 @@ const RootNavigator: React.FC = () => {
         }}
       >
         {!isAuthenticated ? (
-          <Stack.Screen
-            name="Auth"
-            component={AuthNavigator}
-          />
+          <Stack.Screen name="Auth" component={AuthNavigator} />
         ) : (
-          <Stack.Screen
-            name="Main"
-            component={MainNavigator}
-          />
+          <Stack.Screen name="Main" component={MainNavigator} />
         )}
       </Stack.Navigator>
     </NavigationContainer>
