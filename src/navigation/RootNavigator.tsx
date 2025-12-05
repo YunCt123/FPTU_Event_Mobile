@@ -45,11 +45,8 @@ const RootNavigator: React.FC = () => {
         }}
         initialRouteName={initialRoute}
       >
-        {!isAuthenticated ? (
-          <Stack.Screen name="Auth" component={AuthNavigator} />
-        ) : (
-          <Stack.Screen name="Main" component={MainNavigator} />
-        )}
+        <Stack.Screen name="Auth" component={AuthNavigator} />
+        <Stack.Screen name="Main" component={MainNavigator} />
       </Stack.Navigator>
     </NavigationContainer>
   );
