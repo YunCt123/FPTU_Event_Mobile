@@ -77,36 +77,9 @@ const RegisterAdditionalScreen: React.FC<Props> = ({ navigation, route }) => {
         "https://res.cloudinary.com/dpqvdxj10/image/upload/v1764850956/e4b228573786e7c96ab67604cc281fe1_t6hjal.jpg",
     };
 
-    if (params.requireStudentCard) {
-      setError(null);
-      navigation.navigate("RegisterStudentCard", { basePayload });
-      return;
-    }
-
-    try {
-      setError(null);
-      setLoading(true);
-
-      const payload: RegisterRequest = {
-        ...basePayload,
-        studentCardImage: "",
-      };
-
-      const res = await authService.register(payload);
-      console.log("Register response:", res);
-
-      const message =
-        "Đăng ký thành công, tài khoản đang chờ duyệt. Vui lòng chờ admin xác nhận.";
-      navigation.navigate("AuthLanding", { registerMessage: message });
-    } catch (e: any) {
-      console.log("Register error:", e?.response ?? e);
-      const message =
-        e?.response?.data?.message ||
-        "Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.";
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
+    // Luôn yêu cầu bước thẻ sinh viên
+    setError(null);
+    navigation.navigate("RegisterStudentCard", { basePayload });
   };
 
   useEffect(() => {

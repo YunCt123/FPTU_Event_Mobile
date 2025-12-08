@@ -22,7 +22,7 @@ export type RootStackParamList = {
 };
 
 export type AuthStackParamList = {
-  AuthLanding: undefined;
+  AuthLanding: { registerMessage?: string } | undefined;
   Login: undefined;
   Register: undefined;
   RegisterAdditional: {

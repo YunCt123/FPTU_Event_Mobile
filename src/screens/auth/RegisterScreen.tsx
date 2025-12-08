@@ -63,7 +63,6 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     }
 
     const genderBoolean = gender === "male";
-    const isFptEmail = email.toLowerCase().endsWith("@fpt.edu.vn");
     setError(null);
     navigation.navigate("RegisterAdditional", {
       userName,
@@ -73,7 +72,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       password,
       gender: genderBoolean,
       phoneNumber,
-      requireStudentCard: !isFptEmail,
+      // Luôn yêu cầu thẻ sinh viên để chờ admin duyệt
+      requireStudentCard: true,
     });
   };
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
   Animated,
+  Modal,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RouteProp } from "@react-navigation/native";
@@ -60,6 +61,18 @@ const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
   const registerMessage = (
     route.params as { registerMessage?: string } | undefined
   )?.registerMessage;
+  const [modalVisible, setModalVisible] = useState(!!registerMessage);
+
+  useEffect(() => {
+    if (registerMessage) {
+      setModalVisible(true);
+    }
+  }, [registerMessage]);
+
+  const closeModal = () => {
+    setModalVisible(false);
+    navigation.setParams({ registerMessage: undefined } as any);
+  };
 
   return (
     <View style={styles.container}>
@@ -104,9 +117,37 @@ const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
           </Animated.View>
 
           {registerMessage && (
-            <View style={styles.messageContainer}>
-              <Text style={styles.messageText}>{registerMessage}</Text>
-            </View>
+            <Modal
+              visible={modalVisible}
+              transparent
+              animationType="fade"
+              onRequestClose={closeModal}
+            >
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalCard}>
+                  <View style={styles.modalIcon}>
+                    <Text style={styles.modalIconText}>✅</Text>
+                  </View>
+                  <Text style={styles.modalTitle}>Đăng ký thành công</Text>
+                  <Text style={styles.modalMessage}>{registerMessage}</Text>
+                  <TouchableOpacity
+                    style={styles.modalButtonPrimary}
+                    onPress={() => {
+                      closeModal();
+                      navigation.navigate("Login");
+                    }}
+                  >
+                    <Text style={styles.modalButtonPrimaryText}>Đăng nhập</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.modalButtonGhost}
+                    onPress={closeModal}
+                  >
+                    <Text style={styles.modalButtonGhostText}>Đóng</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
           )}
         </View>
       </LinearGradient>
@@ -174,13 +215,75 @@ const styles = StyleSheet.create({
     fontSize: FONTS.bodyLarge,
     fontWeight: "600",
   },
-  messageContainer: {
-    marginTop: SPACING.md,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: SPACING.screenPadding,
   },
-  messageText: {
-    fontSize: FONTS.body,
-    color: "green",
+  modalCard: {
+    width: "100%",
+    backgroundColor: COLORS.white,
+    borderRadius: RADII.modal,
+    padding: SPACING.xl,
+    alignItems: "center",
+    ...SHADOWS.md,
+  },
+  modalIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#E8F3FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: SPACING.md,
+  },
+  modalIconText: {
+    fontSize: 28,
+  },
+  modalTitle: {
+    fontSize: FONTS.bodyLarge ?? FONTS.body,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: SPACING.sm,
     textAlign: "center",
+  },
+  modalMessage: {
+    fontSize: FONTS.body,
+    color: COLORS.text,
+    opacity: 0.8,
+    textAlign: "center",
+    marginBottom: SPACING.lg,
+  },
+  modalButtonPrimary: {
+    width: "100%",
+    height: SIZES.button.height,
+    borderRadius: RADII.button,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: COLORS.primary,
+    marginBottom: SPACING.sm,
+  },
+  modalButtonPrimaryText: {
+    color: COLORS.white,
+    fontSize: FONTS.body,
+    fontWeight: "600",
+  },
+  modalButtonGhost: {
+    width: "100%",
+    height: SIZES.button.height,
+    borderRadius: RADII.button,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    backgroundColor: "transparent",
+  },
+  modalButtonGhostText: {
+    color: COLORS.primary,
+    fontSize: FONTS.body,
+    fontWeight: "600",
   },
 });
 
