@@ -21,3 +21,7 @@ export const USER_ENDPOINTS = {
 export const CAMPUS_ENDPOINTS = {
   LIST: "/campus",
 };
+
+export const EVENT_ENDPOINTS = {
+  LIST: "/events",
+};

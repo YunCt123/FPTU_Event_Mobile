@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,86 +6,117 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  COLORS,
-  SPACING,
-  FONTS,
-  RADII,
-  SHADOWS,
-  SIZES,
-} from "../../utils/theme";
+import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
+import { eventService } from "../../services/eventService";
+import { Event, EventStatus } from "../../types/event";
 
 type EventScreenProps = {
   navigation: NativeStackNavigationProp<any>;
 };
 
-const CATEGORIES = [
-  "Tất cả",
-  "Công nghệ",
-  "Nghệ thuật",
-  "Thể thao",
-  "Khoa học",
+const CATEGORIES: { label: string; value?: EventStatus }[] = [
+  { label: "Tất cả", value: undefined },
+  { label: "Đã xuất bản", value: "PUBLISHED" },
+  { label: "Bản nháp", value: "DRAFT" },
+  { label: "Đang xét duyệt", value: "PENDING" },
+  { label: "Đã hủy", value: "CANCELLED" },
 ];
 
-const MOCK_EVENTS = [
-  {
-    id: "1",
-    title: "Tech Talk: AI in Education",
-    category: "Công nghệ",
-    date: "15/12/2025",
-    time: "14:00",
-    location: "Hall A",
-    attendees: 120,
-    icon: "mic",
-  },
-  {
-    id: "2",
-    title: "Workshop: UI/UX Design",
-    category: "Nghệ thuật",
-    date: "18/12/2025",
-    time: "09:00",
-    location: "Room 301",
-    attendees: 45,
-    icon: "color-palette",
-  },
-  {
-    id: "3",
-    title: "Football Tournament 2025",
-    category: "Thể thao",
-    date: "20/12/2025",
-    time: "15:00",
-    location: "Stadium",
-    attendees: 200,
-    icon: "football",
-  },
-  {
-    id: "4",
-    title: "Science Fair",
-    category: "Khoa học",
-    date: "22/12/2025",
-    time: "10:00",
-    location: "Exhibition Hall",
-    attendees: 85,
-    icon: "flask",
-  },
-];
+const STATUS_LABELS: Record<EventStatus, string> = {
+  PUBLISHED: "Đã xuất bản",
+  DRAFT: "Bản nháp",
+  PENDING: "Đang xét duyệt",
+  CANCELLED: "Đã hủy",
+};
+
+const DEFAULT_PAGE_SIZE = 10;
 
 const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
-  const [selectedCategory, setSelectedCategory] = useState("Tất cả");
+  const [selectedStatus, setSelectedStatus] = useState<EventStatus | undefined>(
+    undefined
+  );
   const [searchQuery, setSearchQuery] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const filteredEvents = MOCK_EVENTS.filter((event) => {
-    const matchCategory =
-      selectedCategory === "Tất cả" || event.category === selectedCategory;
-    const matchSearch = event.title
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    return matchCategory && matchSearch;
-  });
+  const fetchEvents = React.useCallback(
+    async (searchValue: string) => {
+      try {
+        setLoading(true);
+        setErrorMessage(null);
+        const params: {
+          status?: EventStatus;
+          search?: string;
+          page: number;
+          limit: number;
+        } = {
+          page,
+          limit: DEFAULT_PAGE_SIZE,
+        };
+
+        if (selectedStatus) {
+          params.status = selectedStatus;
+        }
+
+        const trimmedSearch = searchValue.trim();
+        if (trimmedSearch) {
+          params.search = trimmedSearch;
+        }
+
+        const response = await eventService.getEvents(params);
+        setEvents(response.data ?? []);
+      } catch (error) {
+        console.error("Failed to fetch events", error);
+        setErrorMessage("Không thể tải danh sách sự kiện");
+        Alert.alert("Lỗi", "Không thể tải danh sách sự kiện");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [selectedStatus, page]
+  );
+
+  useEffect(() => {
+    fetchEvents(appliedSearch);
+  }, [fetchEvents, appliedSearch]);
+
+  const handleSearchSubmit = () => {
+    setPage(1);
+    setAppliedSearch(searchQuery);
+  };
+
+  const filteredEvents = events.filter((event) =>
+    event.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const formatDate = (value: string) => {
+    const date = new Date(value);
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (value: string) => {
+    const date = new Date(value);
+    return date.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getStatusLabel = (status: EventStatus) =>
+    STATUS_LABELS[status] ?? status;
 
   return (
     <View style={styles.container}>
@@ -115,6 +146,8 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
                 placeholder="Tìm kiếm sự kiện..."
                 value={searchQuery}
                 onChangeText={setSearchQuery}
+                onSubmitEditing={handleSearchSubmit}
+                returnKeyType="search"
               />
             </View>
 
@@ -124,102 +157,144 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.categoriesContainer}
             >
-              {CATEGORIES.map((category) => (
-                <TouchableOpacity
-                  key={category}
-                  style={[
-                    styles.categoryChip,
-                    selectedCategory === category && styles.categoryChipActive,
-                  ]}
-                  onPress={() => setSelectedCategory(category)}
-                >
-                  <Text
+              {CATEGORIES.map((category) => {
+                const isActive = selectedStatus === category.value;
+                return (
+                  <TouchableOpacity
+                    key={category.label}
                     style={[
-                      styles.categoryText,
-                      selectedCategory === category &&
-                        styles.categoryTextActive,
+                      styles.categoryChip,
+                      isActive && styles.categoryChipActive,
                     ]}
+                    onPress={() => {
+                      setSelectedStatus(category.value);
+                      setPage(1);
+                    }}
                   >
-                    {category}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text
+                      style={[
+                        styles.categoryText,
+                        isActive && styles.categoryTextActive,
+                      ]}
+                    >
+                      {category.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
           </View>
 
           <View style={styles.eventsContainer}>
-            {filteredEvents.map((event) => (
-              <TouchableOpacity
-                key={event.id}
-                style={styles.eventCard}
-                activeOpacity={0.7}
-              >
-                <View style={styles.eventHeader}>
-                  <View style={styles.eventIconContainer}>
-                    <Ionicons
-                      name={event.icon as any}
-                      size={24}
-                      color={COLORS.primary}
-                    />
+            {errorMessage && (
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            )}
+
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+                <Text style={styles.loadingText}>Đang tải sự kiện...</Text>
+              </View>
+            ) : filteredEvents.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons
+                  name="calendar-outline"
+                  size={48}
+                  color={COLORS.text}
+                  style={{ opacity: 0.25 }}
+                />
+                <Text style={styles.emptyText}>Không có sự kiện nào</Text>
+              </View>
+            ) : (
+              filteredEvents.map((event) => (
+                <TouchableOpacity
+                  key={event.id}
+                  style={styles.eventCard}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.eventHeader}>
+                    <View style={styles.eventIconContainer}>
+                      <Ionicons
+                        name="calendar"
+                        size={24}
+                        color={COLORS.primary}
+                      />
+                    </View>
+                    <View style={styles.categoryBadge}>
+                      <Text style={styles.categoryBadgeText}>
+                        {getStatusLabel(event.status)}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={styles.categoryBadge}>
-                    <Text style={styles.categoryBadgeText}>
-                      {event.category}
+
+                  <Text style={styles.eventTitle}>{event.title}</Text>
+                  <Text style={styles.eventDescription} numberOfLines={2}>
+                    {event.description}
+                  </Text>
+
+                  <View style={styles.eventDetails}>
+                    <View style={styles.eventDetail}>
+                      <Ionicons
+                        name="calendar-outline"
+                        size={14}
+                        color={COLORS.text}
+                        style={{ opacity: 0.7 }}
+                      />
+                      <Text style={styles.detailText}>
+                        {formatDate(event.startTime)}
+                      </Text>
+                    </View>
+                    <View style={styles.eventDetail}>
+                      <Ionicons
+                        name="time-outline"
+                        size={14}
+                        color={COLORS.text}
+                        style={{ opacity: 0.7 }}
+                      />
+                      <Text style={styles.detailText}>
+                        {formatTime(event.startTime)}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.eventDetails}>
+                    <View style={styles.eventDetail}>
+                      <Ionicons
+                        name="location-outline"
+                        size={14}
+                        color={COLORS.text}
+                        style={{ opacity: 0.7 }}
+                      />
+                      <Text style={styles.detailText}>
+                        {event.venue?.name ?? "Đang cập nhật"}
+                      </Text>
+                    </View>
+                    <View style={styles.eventDetail}>
+                      <Ionicons
+                        name="people-outline"
+                        size={14}
+                        color={COLORS.text}
+                        style={{ opacity: 0.7 }}
+                      />
+                      <Text style={styles.detailText}>
+                        {event.registeredCount}/{event.maxCapacity} người
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.organizerInfo}>
+                    <Text style={styles.organizerLabel}>Tổ chức bởi: </Text>
+                    <Text style={styles.organizerName}>
+                      {event.organizer?.name ?? "Đang cập nhật"}
                     </Text>
                   </View>
-                </View>
 
-                <Text style={styles.eventTitle}>{event.title}</Text>
-
-                <View style={styles.eventDetails}>
-                  <View style={styles.eventDetail}>
-                    <Ionicons
-                      name="calendar-outline"
-                      size={14}
-                      color={COLORS.text}
-                      style={{ opacity: 0.7 }}
-                    />
-                    <Text style={styles.detailText}>{event.date}</Text>
-                  </View>
-                  <View style={styles.eventDetail}>
-                    <Ionicons
-                      name="time-outline"
-                      size={14}
-                      color={COLORS.text}
-                      style={{ opacity: 0.7 }}
-                    />
-                    <Text style={styles.detailText}>{event.time}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.eventDetails}>
-                  <View style={styles.eventDetail}>
-                    <Ionicons
-                      name="location-outline"
-                      size={14}
-                      color={COLORS.text}
-                      style={{ opacity: 0.7 }}
-                    />
-                    <Text style={styles.detailText}>{event.location}</Text>
-                  </View>
-                  <View style={styles.eventDetail}>
-                    <Ionicons
-                      name="people-outline"
-                      size={14}
-                      color={COLORS.text}
-                      style={{ opacity: 0.7 }}
-                    />
-                    <Text style={styles.detailText}>
-                      {event.attendees} người tham gia
-                    </Text>
-                  </View>
-                </View>
-
-                <TouchableOpacity style={styles.registerButton}>
-                  <Text style={styles.registerButtonText}>Đăng ký ngay</Text>
+                  <TouchableOpacity style={styles.registerButton}>
+                    <Text style={styles.registerButtonText}>Đăng ký ngay</Text>
+                  </TouchableOpacity>
                 </TouchableOpacity>
-              </TouchableOpacity>
-            ))}
+              ))
+            )}
           </View>
         </ScrollView>
       </LinearGradient>
@@ -327,7 +402,14 @@ const styles = StyleSheet.create({
     fontSize: FONTS.bodyLarge,
     fontWeight: "600",
     color: COLORS.text,
+    marginBottom: SPACING.sm,
+  },
+  eventDescription: {
+    fontSize: FONTS.caption,
+    color: COLORS.text,
+    opacity: 0.7,
     marginBottom: SPACING.md,
+    lineHeight: 18,
   },
   eventDetails: {
     flexDirection: "row",
@@ -354,6 +436,49 @@ const styles = StyleSheet.create({
   registerButtonText: {
     color: COLORS.white,
     fontSize: FONTS.body,
+    fontWeight: "600",
+  },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: SPACING.xl,
+    gap: SPACING.sm,
+  },
+  loadingText: {
+    fontSize: FONTS.body,
+    color: COLORS.text,
+    opacity: 0.7,
+  },
+  emptyContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: SPACING.xl,
+    gap: SPACING.sm,
+  },
+  emptyText: {
+    fontSize: FONTS.body,
+    color: COLORS.text,
+    opacity: 0.5,
+  },
+  errorText: {
+    color: COLORS.primary,
+    marginBottom: SPACING.md,
+    fontSize: FONTS.caption,
+  },
+  organizerInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  organizerLabel: {
+    fontSize: FONTS.caption,
+    color: COLORS.text,
+    opacity: 0.7,
+  },
+  organizerName: {
+    fontSize: FONTS.caption,
+    color: COLORS.primary,
     fontWeight: "600",
   },
 });
