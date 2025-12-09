@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -20,12 +20,12 @@ type EventScreenProps = {
   navigation: NativeStackNavigationProp<any>;
 };
 
-const CATEGORIES: { label: string; value?: EventStatus }[] = [
-  { label: "Tất cả", value: undefined },
-  { label: "Đã xuất bản", value: "PUBLISHED" },
-  { label: "Bản nháp", value: "DRAFT" },
-  { label: "Đang xét duyệt", value: "PENDING" },
-  { label: "Đã hủy", value: "CANCELLED" },
+const PRESET_CATEGORIES = [
+  "Tất cả",
+  "Công nghệ",
+  "Nghệ thuật",
+  "Thể thao",
+  "Khoa học",
 ];
 
 const STATUS_LABELS: Record<EventStatus, string> = {
@@ -38,9 +38,7 @@ const STATUS_LABELS: Record<EventStatus, string> = {
 const DEFAULT_PAGE_SIZE = 10;
 
 const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
-  const [selectedStatus, setSelectedStatus] = useState<EventStatus | undefined>(
-    undefined
-  );
+  const [selectedCategory, setSelectedCategory] = useState<string>("Tất cả");
   const [searchQuery, setSearchQuery] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -48,13 +46,28 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const categoryOptions = useMemo(() => {
+    const dynamicCategories = Array.from(
+      new Set(
+        events
+          .map((event) => event.category)
+          .filter((category): category is string => Boolean(category))
+      )
+    ).filter((category) => category !== "Tất cả");
+
+    if (dynamicCategories.length === 0) {
+      return PRESET_CATEGORIES;
+    }
+
+    return ["Tất cả", ...dynamicCategories];
+  }, [events]);
+
   const fetchEvents = React.useCallback(
     async (searchValue: string) => {
       try {
         setLoading(true);
         setErrorMessage(null);
         const params: {
-          status?: EventStatus;
           search?: string;
           page: number;
           limit: number;
@@ -62,10 +75,6 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
           page,
           limit: DEFAULT_PAGE_SIZE,
         };
-
-        if (selectedStatus) {
-          params.status = selectedStatus;
-        }
 
         const trimmedSearch = searchValue.trim();
         if (trimmedSearch) {
@@ -82,7 +91,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
         setLoading(false);
       }
     },
-    [selectedStatus, page]
+    [page]
   );
 
   useEffect(() => {
@@ -94,9 +103,14 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
     setAppliedSearch(searchQuery);
   };
 
-  const filteredEvents = events.filter((event) =>
-    event.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredEvents = events.filter((event) => {
+    const matchCategory =
+      selectedCategory === "Tất cả" || event.category === selectedCategory;
+    const matchSearch = event.title
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    return matchCategory && matchSearch;
+  });
 
   const formatDate = (value: string) => {
     const date = new Date(value);
@@ -157,17 +171,17 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.categoriesContainer}
             >
-              {CATEGORIES.map((category) => {
-                const isActive = selectedStatus === category.value;
+              {categoryOptions.map((category) => {
+                const isActive = selectedCategory === category;
                 return (
                   <TouchableOpacity
-                    key={category.label}
+                    key={category}
                     style={[
                       styles.categoryChip,
                       isActive && styles.categoryChipActive,
                     ]}
                     onPress={() => {
-                      setSelectedStatus(category.value);
+                      setSelectedCategory(category);
                       setPage(1);
                     }}
                   >
@@ -177,7 +191,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
                         isActive && styles.categoryTextActive,
                       ]}
                     >
-                      {category.label}
+                      {category}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -289,7 +303,10 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
                     </Text>
                   </View>
 
-                  <TouchableOpacity style={styles.registerButton}>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("")}
+                    style={styles.registerButton}
+                  >
                     <Text style={styles.registerButtonText}>Đăng ký ngay</Text>
                   </TouchableOpacity>
                 </TouchableOpacity>
