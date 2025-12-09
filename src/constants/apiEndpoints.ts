@@ -25,3 +25,10 @@ export const CAMPUS_ENDPOINTS = {
 export const EVENT_ENDPOINTS = {
   LIST: "/events",
 };
+
+export const TICKET_ENDPOINTS = {
+  LIST: "/tickets/me",
+  CREATE: "/tickets",
+  BY_ID: (id: string) => `/tickets/${id}`,
+  BY_QR: (qrCode: string) => `/tickets/qr/${qrCode}`,
+};

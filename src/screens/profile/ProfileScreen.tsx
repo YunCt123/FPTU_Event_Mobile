@@ -12,7 +12,6 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { LinearGradient } from "expo-linear-gradient";
-
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authService } from "../../services/authService";
 import { STORAGE_KEYS } from "../../api/api";
@@ -186,6 +185,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.profileHeader}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+              </TouchableOpacity>
               <View style={styles.avatarContainer}>
                 <Image
                   source={{ uri: user?.avatar || DEFAULT_AVATAR_URL }}
@@ -244,6 +249,12 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.xxxl,
     alignItems: "center",
     marginBottom: SPACING.lg,
+  },
+  backButton: {
+    position: "absolute",
+    top: SPACING.xxxl,
+    left: SPACING.screenPadding,
+    zIndex: 10,
   },
   avatarContainer: {
     width: 96,

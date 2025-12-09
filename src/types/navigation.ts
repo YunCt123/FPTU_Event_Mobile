@@ -18,6 +18,10 @@ export type RootStackParamList = {
     EventDetails: { eventId: string };
     MyEvents: undefined;
 
+    // Ticket Screens
+    TicketDetails: { ticketId: string };
+    TicketQRCode: { ticketId: string };
+
     // Profile Screens
     Profile: undefined;
     EditProfile: undefined;
@@ -46,7 +50,6 @@ export type MainTabParamList = {
   Home: undefined;
   Event: undefined;
   Ticket: undefined;
-  Profile: undefined;
 };
 
 
