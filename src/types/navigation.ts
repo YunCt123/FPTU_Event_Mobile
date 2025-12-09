@@ -4,11 +4,13 @@ import { RegisterRequest } from "./auth";
 
 export type RootStackParamList = {
     // Auth Screens
+    Auth: undefined;
     AuthLanding: undefined;
     Register: undefined;
     Login: undefined;
 
-    // Main App (Bottom Tabs)
+    // Main App (Bottom Tabs) 
+    Main: undefined;
     MainTabs: undefined;
 
     // Event Screens
@@ -16,9 +18,14 @@ export type RootStackParamList = {
     EventDetails: { eventId: string };
     MyEvents: undefined;
 
+    // Ticket Screens
+    TicketDetails: { ticketId: string };
+    TicketQRCode: { ticketId: string };
+
     // Profile Screens
     Profile: undefined;
     EditProfile: undefined;
+    PersonalInfo: undefined;
 };
 
 export type AuthStackParamList = {
@@ -44,7 +51,6 @@ export type MainTabParamList = {
   Home: undefined;
   Event: undefined;
   Ticket: undefined;
-  Profile: undefined;
 };
 
 

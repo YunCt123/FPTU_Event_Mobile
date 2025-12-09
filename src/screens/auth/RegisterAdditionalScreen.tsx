@@ -28,6 +28,7 @@ import { RegisterRequest } from "../../types/auth";
 import { authService } from "../../services/authService";
 import { campusService } from "../../services/campusService";
 import { Campus } from "../../types/user";
+import { GradientButton } from "../../components";
 
 type NavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
@@ -186,15 +187,12 @@ const RegisterAdditionalScreen: React.FC<Props> = ({ navigation, route }) => {
                     <Text style={styles.secondaryButtonText}>Quay lại</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={[styles.registerButton, loading && { opacity: 0.7 }]}
-                    onPress={loading ? undefined : handleSubmit}
+                  <GradientButton
+                    title={params.requireStudentCard ? "Tiếp theo" : "Đăng ký"}
+                    onPress={handleSubmit}
+                    loading={loading}
                     disabled={loading}
-                  >
-                    <Text style={styles.registerButtonText}>
-                      {params.requireStudentCard ? "Tiếp theo" : "Đăng ký"}
-                    </Text>
-                  </TouchableOpacity>
+                  />
                 </View>
               </View>
             </View>
@@ -228,7 +226,8 @@ const RegisterAdditionalScreen: React.FC<Props> = ({ navigation, route }) => {
                     <Text
                       style={[
                         styles.campusItemText,
-                        String(c.id) === campusId && styles.campusItemTextActive,
+                        String(c.id) === campusId &&
+                          styles.campusItemTextActive,
                       ]}
                     >
                       {c.name}
@@ -412,5 +411,3 @@ const styles = StyleSheet.create({
 });
 
 export default RegisterAdditionalScreen;
-
-
