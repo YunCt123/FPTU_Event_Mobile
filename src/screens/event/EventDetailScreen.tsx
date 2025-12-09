@@ -18,6 +18,7 @@ import { eventService } from "../../services/eventService";
 import EventRegisterModal from "../../components/Event/EventRegisterModal";
 import { Event, EventStatus } from "../../types/event";
 import { RootStackParamList } from "../../types/navigation";
+import { GradientButton } from "../../components";
 
 type EventDetailScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "EventDetails">;

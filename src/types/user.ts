@@ -20,3 +20,12 @@ export interface User {
   createdAt: string;
   campus: Campus;
 }
+
+export interface UpdateUserProfileRequest{
+  userName: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string
+  address: string;
+  avatar: string;
+}
