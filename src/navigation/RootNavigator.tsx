@@ -11,6 +11,7 @@ import EventDetailScreen from "../screens/event/EventDetailScreen";
 import TicketDetailScreen from "../screens/ticket/TicketDetailScreen";
 import TicketQRCodeScreen from "../screens/ticket/TicketQRCodeScreen";
 import { RootStackParamList } from "../types/navigation";
+import TicketScanScreen from "../screens/staff/TicketScanScreen";
 
 export type { RootStackParamList };
 
@@ -55,6 +56,7 @@ const RootNavigator: React.FC = () => {
         <Stack.Screen name="EventDetails" component={EventDetailScreen} />
         <Stack.Screen name="TicketDetails" component={TicketDetailScreen} />
         <Stack.Screen name="TicketQRCode" component={TicketQRCodeScreen} />
+        <Stack.Screen name="StaffScan" component={TicketScanScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

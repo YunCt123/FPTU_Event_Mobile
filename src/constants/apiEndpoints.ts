@@ -32,4 +32,5 @@ export const TICKET_ENDPOINTS = {
   CREATE: "/tickets",
   BY_ID: (id: string) => `/tickets/${id}`,
   BY_QR: (qrCode: string) => `/tickets/qr/${qrCode}`,
+  SCAN: "/tickets/scan",
 };

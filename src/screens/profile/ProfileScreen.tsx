@@ -67,7 +67,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
       const token = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
       if (!token) {
-        navigation.getParent()?.reset({
+        navigation.reset({
           index: 0,
           routes: [{ name: "Auth" as never }],
         });
@@ -86,10 +86,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           STORAGE_KEYS.REFRESH_TOKEN,
           STORAGE_KEYS.USER,
         ]);
-        navigation.getParent()?.reset({
-          index: 0,
-          routes: [{ name: "Login" as never }],
-        });
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Auth" as never }],
+          });
         return;
       }
 
@@ -122,7 +122,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                 STORAGE_KEYS.REFRESH_TOKEN,
                 STORAGE_KEYS.USER,
               ]);
-              navigation.getParent()?.reset({
+              navigation.reset({
                 index: 0,
                 routes: [{ name: "Auth" as never }],
               });
@@ -136,35 +136,55 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     );
   };
 
-  const renderMenuItems = () => (
-    <View style={styles.menuContainer}>
-      {MENU_ITEMS.map((item) => (
-        <TouchableOpacity
-          key={item.id}
-          style={styles.menuItem}
-          activeOpacity={0.7}
-          onPress={() => {
-            if (item.id === "1") {
-              navigation.navigate("PersonalInfo");
-            }
-          }}
-        >
-          <View style={styles.menuIconContainer}>
-            <Ionicons
-              name={item.icon as any}
-              size={20}
-              color={COLORS.primary}
-            />
-          </View>
-          <View style={styles.menuContent}>
-            <Text style={styles.menuTitle}>{item.title}</Text>
-            <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
-          </View>
-          <Text style={styles.menuArrow}>›</Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
+  const renderMenuItems = () => {
+    const isStaff = user?.roleName?.toLowerCase() === "staff";
+    const items = [
+      ...MENU_ITEMS,
+      ...(isStaff
+        ? [
+            {
+              id: "staff-scan",
+              icon: "qr-code",
+              title: "Quét vé (Staff)",
+              subtitle: "Check-in nhanh bằng QR code",
+            },
+          ]
+        : []),
+    ];
+
+    return (
+      <View style={styles.menuContainer}>
+        {items.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            style={styles.menuItem}
+            activeOpacity={0.7}
+            onPress={() => {
+              if (item.id === "1") {
+                navigation.navigate("PersonalInfo");
+              }
+              if (item.id === "staff-scan") {
+                navigation.navigate("StaffScan");
+              }
+            }}
+          >
+            <View style={styles.menuIconContainer}>
+              <Ionicons
+                name={item.icon as any}
+                size={20}
+                color={COLORS.primary}
+              />
+            </View>
+            <View style={styles.menuContent}>
+              <Text style={styles.menuTitle}>{item.title}</Text>
+              <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
+            </View>
+            <Text style={styles.menuArrow}>›</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
 
   const renderStats = () => (
     <View style={styles.statsContainer}>
