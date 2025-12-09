@@ -25,3 +25,11 @@ export const CAMPUS_ENDPOINTS = {
 export const EVENT_ENDPOINTS = {
   LIST: "/events",
 };
+
+export const TICKET_ENDPOINTS = {
+  REGISTER: "/tickets",
+};
+
+export const SEAT_ENDPOINTS = {
+  GET: "/seat",
+};

@@ -29,10 +29,10 @@ const PRESET_CATEGORIES = [
 ];
 
 const STATUS_LABELS: Record<EventStatus, string> = {
-  PUBLISHED: "Đã xuất bản",
-  DRAFT: "Bản nháp",
-  PENDING: "Đang xét duyệt",
-  CANCELLED: "Đã hủy",
+  PUBLISHED: "PUBLISHED",
+  DRAFT: "DRAFT",
+  PENDING: "PENDING",
+  CANCELLED: "CANCELLED",
 };
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -225,6 +225,9 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
                   key={event.id}
                   style={styles.eventCard}
                   activeOpacity={0.7}
+                  onPress={() =>
+                    navigation.navigate("EventDetails", { eventId: event.id })
+                  }
                 >
                   <View style={styles.eventHeader}>
                     <View style={styles.eventIconContainer}>
@@ -304,7 +307,9 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
                   </View>
 
                   <TouchableOpacity
-                    onPress={() => navigation.navigate("")}
+                    onPress={() =>
+                      navigation.navigate("EventDetails", { eventId: event.id })
+                    }
                     style={styles.registerButton}
                   >
                     <Text style={styles.registerButtonText}>Đăng ký ngay</Text>

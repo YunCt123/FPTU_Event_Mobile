@@ -4,11 +4,13 @@ import { RegisterRequest } from "./auth";
 
 export type RootStackParamList = {
     // Auth Screens
+    Auth: undefined;
     AuthLanding: undefined;
     Register: undefined;
     Login: undefined;
 
-    // Main App (Bottom Tabs)
+    // Main App (Bottom Tabs) 
+    Main: undefined;
     MainTabs: undefined;
 
     // Event Screens
