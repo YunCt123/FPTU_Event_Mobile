@@ -90,7 +90,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 events={FEATURED_EVENTS}
                 onEventPress={(event) => {
                   console.log("Event pressed:", event.title);
-                  navigation.navigate("Event");
+                  navigation.navigate("EventDetails", { eventId: event.id });
                 }}
                 autoPlayInterval={2000}
               />
@@ -105,7 +105,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.upcomingCard}>
+              <TouchableOpacity 
+                style={styles.upcomingCard}
+                onPress={() => navigation.navigate("EventDetails", { eventId: "1" })}
+                activeOpacity={0.7}
+              >
                 <View style={styles.upcomingLeft}>
                   <View style={styles.upcomingDate}>
                     <Text style={styles.upcomingDay}>15</Text>
@@ -133,16 +137,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                     <Text style={styles.upcomingDetailText}>Hall A</Text>
                   </View>
                 </View>
-                <TouchableOpacity style={styles.upcomingAction}>
+                <View style={styles.upcomingAction}>
                   <Ionicons
                     name="chevron-forward"
                     size={20}
                     color={COLORS.primary}
                   />
-                </TouchableOpacity>
-              </View>
+                </View>
+              </TouchableOpacity>
 
-              <View style={styles.upcomingCard}>
+              <TouchableOpacity 
+                style={styles.upcomingCard}
+                onPress={() => navigation.navigate("EventDetails", { eventId: "2" })}
+                activeOpacity={0.7}
+              >
                 <View style={styles.upcomingLeft}>
                   <View style={styles.upcomingDate}>
                     <Text style={styles.upcomingDay}>18</Text>
@@ -170,14 +178,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                     <Text style={styles.upcomingDetailText}>Room 301</Text>
                   </View>
                 </View>
-                <TouchableOpacity style={styles.upcomingAction}>
+                <View style={styles.upcomingAction}>
                   <Ionicons
                     name="chevron-forward"
                     size={20}
                     color={COLORS.primary}
                   />
-                </TouchableOpacity>
-              </View>
+                </View>
+              </TouchableOpacity>
             </View>
 
             {/* 4. Quick Actions - Lối tắt cho các tác vụ thường xuyên */}

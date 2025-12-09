@@ -10,19 +10,11 @@ export const COLORS = {
   text: "#212121",
   overlay: "rgba(0, 0, 0, 0.5)",
 
-  gradient_1: [
-    "#86E7FF",
-    "#FFF5EC",
-    "#FFE8CF",
-    "#F1FDF6",
-    "#D2F8E2",
-  ] as const,
-    gradient_2: [ 
-    "#667eea",
-    "#764ba2",
-    ] as const,
+  gradient_1: ["#86E7FF", "#FFF5EC", "#FFE8CF", "#F1FDF6", "#D2F8E2"] as const,
+  gradient_2: ["#667eea", "#764ba2"] as const,
+  gradient_button: ["#FF9A3C", "#FF6A00"] as const,
 };
- 
+
 export const SPACING = {
   xs: 4,
   sm: 8,
