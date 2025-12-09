@@ -25,6 +25,7 @@ export type RootStackParamList = {
     // Profile Screens
     Profile: undefined;
     EditProfile: undefined;
+    PersonalInfo: undefined;
 };
 
 export type AuthStackParamList = {

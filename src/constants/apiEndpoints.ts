@@ -16,6 +16,7 @@ export const AUTH_ENDPOINTS = {
 
 export const USER_ENDPOINTS = {
   ME: "/users/me",
+  UPDATE_ME: "/users/me",
 };
 
 export const CAMPUS_ENDPOINTS = {

@@ -9,7 +9,7 @@ import {
   RegisterResponse,
   RegisterSuccessResponse,
 } from "../types/auth";
-import { User } from "../types/user";
+import { User, UpdateUserProfileRequest } from "../types/user";
 
 class AuthService {
   private async persistAccessToken(token?: string) {
@@ -40,6 +40,13 @@ class AuthService {
   async getCurrentUser(): Promise<User> {
     const data = await api.get<User>(USER_ENDPOINTS.ME);
     // Có thể lưu user vào AsyncStorage nếu cần dùng offline
+    await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data));
+    return data;
+  }
+
+  async updateProfile(payload: UpdateUserProfileRequest): Promise<User> {
+    const data = await api.patch<User>(USER_ENDPOINTS.UPDATE_ME, payload);
+    // Cập nhật user trong AsyncStorage
     await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data));
     return data;
   }

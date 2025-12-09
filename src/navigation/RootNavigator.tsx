@@ -6,6 +6,7 @@ import AuthNavigator from "./AuthNavigator";
 import MainNavigator from "./MainNavigator";
 import { STORAGE_KEYS } from "../api/api";
 import ProfileScreen from "../screens/profile/ProfileScreen";
+import PersonalInfoScreen from "../screens/profile/PersonalInfoScreen";
 import EventDetailScreen from "../screens/event/EventDetailScreen";
 import TicketDetailScreen from "../screens/ticket/TicketDetailScreen";
 import TicketQRCodeScreen from "../screens/ticket/TicketQRCodeScreen";
@@ -50,6 +51,7 @@ const RootNavigator: React.FC = () => {
         <Stack.Screen name="Auth" component={AuthNavigator} />
         <Stack.Screen name="Main" component={MainNavigator} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
         <Stack.Screen name="EventDetails" component={EventDetailScreen} />
         <Stack.Screen name="TicketDetails" component={TicketDetailScreen} />
         <Stack.Screen name="TicketQRCode" component={TicketQRCodeScreen} />
