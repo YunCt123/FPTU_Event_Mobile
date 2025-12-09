@@ -22,17 +22,17 @@ type EventScreenProps = {
 
 const CATEGORIES: { label: string; value?: EventStatus }[] = [
   { label: "Tất cả", value: undefined },
-  { label: "Đã xuất bản", value: "PUBLISHED" },
-  { label: "Bản nháp", value: "DRAFT" },
-  { label: "Đang xét duyệt", value: "PENDING" },
-  { label: "Đã hủy", value: "CANCELLED" },
+  { label: "PUBLISHED", value: "PUBLISHED" }, 
+  { label: "DRAFT", value: "DRAFT" },
+  { label: "PENDING", value: "PENDING" },
+  { label: "CANCELLED", value: "CANCELLED" },
 ];
 
 const STATUS_LABELS: Record<EventStatus, string> = {
-  PUBLISHED: "Đã xuất bản",
-  DRAFT: "Bản nháp",
-  PENDING: "Đang xét duyệt",
-  CANCELLED: "Đã hủy",
+  PUBLISHED: "PUBLISHED",
+  DRAFT: "DRAFT",
+  PENDING: "PENDING",
+  CANCELLED: "CANCELLED",
 };
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -211,6 +211,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
                   key={event.id}
                   style={styles.eventCard}
                   activeOpacity={0.7}
+                  onPress={() => navigation.navigate("EventDetails", { eventId: event.id })}
                 >
                   <View style={styles.eventHeader}>
                     <View style={styles.eventIconContainer}>

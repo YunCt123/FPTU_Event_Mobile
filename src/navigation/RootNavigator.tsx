@@ -6,12 +6,10 @@ import AuthNavigator from "./AuthNavigator";
 import MainNavigator from "./MainNavigator";
 import { STORAGE_KEYS } from "../api/api";
 import ProfileScreen from "../screens/profile/ProfileScreen";
+import EventDetailScreen from "../screens/event/EventDetailScreen";
+import { RootStackParamList } from "../types/navigation";
 
-export type RootStackParamList = {
-  Auth: undefined;
-  Main: undefined;
-  Profile: undefined;
-};
+export type { RootStackParamList };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -50,6 +48,7 @@ const RootNavigator: React.FC = () => {
         <Stack.Screen name="Auth" component={AuthNavigator} />
         <Stack.Screen name="Main" component={MainNavigator} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="EventDetails" component={EventDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
