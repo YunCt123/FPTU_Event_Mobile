@@ -28,6 +28,11 @@ export const EVENT_ENDPOINTS = {
 };
 
 export const TICKET_ENDPOINTS = {
+  REGISTER: "/tickets",
+};
+
+export const SEAT_ENDPOINTS = {
+  GET: "/seat",
   LIST: "/tickets/me",
   CREATE: "/tickets",
   BY_ID: (id: string) => `/tickets/${id}`,

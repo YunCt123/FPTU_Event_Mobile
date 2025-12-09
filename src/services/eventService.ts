@@ -1,5 +1,5 @@
 import { api } from "../api/api";
-import { EVENT_ENDPOINTS } from "../constants/apiEndpoints";
+import { EVENT_ENDPOINTS, TICKET_ENDPOINTS } from "../constants/apiEndpoints";
 import { Event } from "../types/event";
 
 interface GetEventsResponse {
@@ -11,6 +11,11 @@ interface GetEventsParams {
   limit?: number;
   status?: string;
   search?: string;
+}
+
+interface RegisterEventParams {
+  eventId: string;
+  seatId: number;
 }
 
 class EventService {
@@ -26,6 +31,15 @@ class EventService {
   async getEventById(eventId: string): Promise<Event> {
     const data = await api.get<Event>(`${EVENT_ENDPOINTS.LIST}/${eventId}`);
     return data;
+  }
+
+  async registerEvent(payload: RegisterEventParams) {
+    console.log(payload);
+    const res = await api.post<RegisterEventParams>(
+      `${TICKET_ENDPOINTS.REGISTER}`,
+      payload
+    );
+    return res;
   }
 }
 

@@ -35,7 +35,6 @@ const RootNavigator: React.FC = () => {
   }, []);
 
   if (!initialRoute) {
-    // Có thể return một splash/loading ở đây nếu muốn
     return null;
   }
 
