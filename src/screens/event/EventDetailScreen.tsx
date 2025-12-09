@@ -17,6 +17,7 @@ import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { eventService } from "../../services/eventService";
 import { Event, EventStatus } from "../../types/event";
 import { RootStackParamList } from "../../types/navigation";
+import { GradientButton } from "../../components";
 
 type EventDetailScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "EventDetails">;
@@ -314,24 +315,19 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
 
         {/* Register Button */}
         <View style={styles.footer}>
-          <TouchableOpacity
-            style={[
-              styles.registerButton,
-              !canRegister() && styles.registerButtonDisabled,
-            ]}
-            disabled={!canRegister()}
-            onPress={() => {
-              Alert.alert("Đăng ký", "Chức năng đăng ký đang được phát triển");
-            }}
-          >
-            <Text style={styles.registerButtonText}>
-              {canRegister()
+          <GradientButton
+            title={
+              canRegister()
                 ? "Đăng ký tham gia"
                 : event.registeredCount >= event.maxCapacity
                 ? "Đã hết chỗ"
-                : "Chưa mở đăng ký"}
-            </Text>
-          </TouchableOpacity>
+                : "Chưa mở đăng ký"
+            }
+            onPress={() => {
+              Alert.alert("Đăng ký", "Chức năng đăng ký đang được phát triển");
+            }}
+            disabled={!canRegister()}
+          />
         </View>
       </LinearGradient>
     </View>

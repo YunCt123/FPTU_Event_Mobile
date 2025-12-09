@@ -22,6 +22,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { authService } from "../../services/authService";
 import { LoginRequest } from "../../types/auth";
+import { GradientButton } from "../../components";
 
 type LoginScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -122,15 +123,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.loginButton, loading && { opacity: 0.7 }]}
-                onPress={loading ? undefined : handleLogin}
+              <GradientButton
+                title={loading ? "Đang đăng nhập..." : "Đăng nhập"}
+                onPress={handleLogin}
+                loading={loading}
                 disabled={loading}
-              >
-                <Text style={styles.loginButtonText}>
-                  {loading ? "Đang đăng nhập..." : "Đăng nhập"}
-                </Text>
-              </TouchableOpacity>
+              />
 
               <View style={styles.footer}>
                 <Text style={styles.footerText}>Chưa có tài khoản? </Text>

@@ -23,11 +23,6 @@ const MainNavigator = () => {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Event" component={EventScreen} />
       <Tab.Screen name="Ticket" component={TicketScreen} />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{ tabBarButton: () => null }}
-      />
     </Tab.Navigator>
   );
 };

@@ -7,12 +7,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  Alert,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { LinearGradient } from "expo-linear-gradient";
-
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authService } from "../../services/authService";
 import { STORAGE_KEYS } from "../../api/api";
@@ -34,12 +34,6 @@ const MENU_ITEMS = [
     icon: "ticket",
     title: "Lịch sử đăng ký",
     subtitle: "Xem các sự kiện đã tham gia",
-  },
-  {
-    id: "3",
-    icon: "heart",
-    title: "Sự kiện yêu thích",
-    subtitle: "Danh sách sự kiện đã lưu",
   },
   {
     id: "4",
@@ -65,9 +59,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const DEFAULT_AVATAR_URL =
-    "https://res.cloudinary.com/dpqvdxj10/image/upload/v1764850956/e4b228573786e7c96ab67604cc281fe1_t6hjal.jpg";
 
   const loadProfile = async () => {
     try {
@@ -97,7 +88,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         ]);
         navigation.getParent()?.reset({
           index: 0,
-          routes: [{ name: "Auth" as never }],
+          routes: [{ name: "Login" as never }],
         });
         return;
       }
@@ -113,15 +104,36 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   }, []);
 
   const handleLogout = async () => {
-    await AsyncStorage.multiRemove([
-      STORAGE_KEYS.ACCESS_TOKEN,
-      STORAGE_KEYS.REFRESH_TOKEN,
-      STORAGE_KEYS.USER,
-    ]);
-    navigation.getParent()?.reset({
-      index: 0,
-      routes: [{ name: "Auth" as never }],
-    });
+    Alert.alert(
+      "Xác nhận đăng xuất",
+      "Bạn có chắc chắn muốn đăng xuất không?",
+      [
+        {
+          text: "Hủy",
+          style: "cancel",
+        },
+        {
+          text: "Đăng xuất",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await AsyncStorage.multiRemove([
+                STORAGE_KEYS.ACCESS_TOKEN,
+                STORAGE_KEYS.REFRESH_TOKEN,
+                STORAGE_KEYS.USER,
+              ]);
+              navigation.getParent()?.reset({
+                index: 0,
+                routes: [{ name: "Auth" as never }],
+              });
+            } catch (error) {
+              console.error("Logout error:", error);
+              Alert.alert("Lỗi", "Đăng xuất thất bại. Vui lòng thử lại.");
+            }
+          },
+        },
+      ]
+    );
   };
 
   const renderMenuItems = () => (
@@ -131,6 +143,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           key={item.id}
           style={styles.menuItem}
           activeOpacity={0.7}
+          onPress={() => {
+            if (item.id === "1") {
+              navigation.navigate("PersonalInfo");
+            }
+          }}
         >
           <View style={styles.menuIconContainer}>
             <Ionicons
@@ -161,10 +178,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         <Text style={styles.statLabel}>Sắp tới</Text>
       </View>
       <View style={styles.statDivider} />
-      <View style={styles.statItem}>
-        <Text style={styles.statNumber}>8</Text>
-        <Text style={styles.statLabel}>Yêu thích</Text>
-      </View>
     </View>
   );
 
@@ -186,12 +199,22 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.profileHeader}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+              </TouchableOpacity>
               <View style={styles.avatarContainer}>
-                <Image
-                  source={{ uri: user?.avatar || DEFAULT_AVATAR_URL }}
-                  style={styles.avatarImage}
-                  resizeMode="cover"
-                />
+                {user?.avatar ? (
+                  <Image
+                    source={{ uri: user.avatar }}
+                    style={styles.avatarImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Ionicons name="person" size={48} color={COLORS.text} />
+                )}
               </View>
               <Text style={styles.userName}>
                 {user ? `${user.firstName} ${user.lastName}` : "Người dùng"}
@@ -244,6 +267,12 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.xxxl,
     alignItems: "center",
     marginBottom: SPACING.lg,
+  },
+  backButton: {
+    position: "absolute",
+    top: SPACING.xxxl,
+    left: SPACING.screenPadding,
+    zIndex: 10,
   },
   avatarContainer: {
     width: 96,

@@ -22,6 +22,7 @@ import {
   SIZES,
 } from "../../utils/theme";
 import { AuthStackParamList } from "../../types/navigation";
+import { GradientButton } from "../../components";
 
 type RegisterScreenProps = {
   navigation: NativeStackNavigationProp<AuthStackParamList, "Register">;
@@ -244,13 +245,12 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
                   <Text style={styles.successText}>{successMessage}</Text>
                 )}
 
-                <TouchableOpacity
-                  style={[styles.registerButton, loading && { opacity: 0.7 }]}
-                  onPress={loading ? undefined : handleGoNext}
+                <GradientButton
+                  title="Tiếp tục"
+                  onPress={handleGoNext}
+                  loading={loading}
                   disabled={loading}
-                >
-                  <Text style={styles.registerButtonText}>Đăng ký</Text>
-                </TouchableOpacity>
+                />
 
                 <View style={styles.footer}>
                   <Text style={styles.footerText}>Đã có tài khoản? </Text>
