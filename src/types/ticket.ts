@@ -33,3 +33,15 @@ export interface CreateTicketRequest {
 export interface CreateTicketResponse {
   data: Ticket;
 }
+
+export interface ScanTicketRequest {
+  qrCode: string;
+  staffId: number;
+}
+
+export interface ScanTicketResponse {
+  success: boolean;
+  message: string;
+  ticket: Ticket;
+  user: User;
+}

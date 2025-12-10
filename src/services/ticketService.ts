@@ -1,6 +1,11 @@
 import { api } from "../api/api";
 import { TICKET_ENDPOINTS } from "../constants/apiEndpoints";
-import { CreateTicketRequest, Ticket } from "../types/ticket";
+import {
+  CreateTicketRequest,
+  ScanTicketRequest,
+  ScanTicketResponse,
+  Ticket,
+} from "../types/ticket";
 
 interface GetTicketsResponse {
   data: Ticket[];
@@ -78,6 +83,24 @@ class TicketService {
       return response;
     } catch (error) {
       console.error("Failed to fetch ticket by QR", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Quét QR code vé và check-in
+   * Endpoint: POST /tickets/scan
+   * Yêu cầu quyền: staff
+   */
+  async scanTicket(data: ScanTicketRequest): Promise<ScanTicketResponse> {
+    try {
+      const response = await api.post<ScanTicketResponse>(
+        TICKET_ENDPOINTS.SCAN,
+        data
+      );
+      return response;
+    } catch (error) {
+      console.error("Failed to scan ticket", error);
       throw error;
     }
   }
