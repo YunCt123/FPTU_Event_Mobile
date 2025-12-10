@@ -42,3 +42,8 @@ export const TICKET_ENDPOINTS = {
 export const SEAT_ENDPOINTS = {
   GET: "/seat",
 };
+
+export const NOTIFICATION_ENDPOINTS = {
+  SUBSCRIPTIONS: "/notifications/subscriptions",
+  TEST_SEND: "/notifications/test-send",
+};

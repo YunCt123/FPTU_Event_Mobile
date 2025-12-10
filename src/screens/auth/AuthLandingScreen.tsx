@@ -185,39 +185,37 @@ const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
             </TouchableOpacity>
           </Animated.View>
 
-          {registerMessage && (
-            <Modal
-              visible={modalVisible}
-              transparent
-              animationType="fade"
-              onRequestClose={closeModal}
-            >
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalCard}>
-                  <View style={styles.modalIcon}>
-                    <Text style={styles.modalIconText}>✅</Text>
-                  </View>
-                  <Text style={styles.modalTitle}>Đăng ký thành công</Text>
-                  <Text style={styles.modalMessage}>{registerMessage}</Text>
-                  <TouchableOpacity
-                    style={styles.modalButtonPrimary}
-                    onPress={() => {
-                      closeModal();
-                      navigation.navigate("Login");
-                    }}
-                  >
-                    <Text style={styles.modalButtonPrimaryText}>Đăng nhập</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.modalButtonGhost}
-                    onPress={closeModal}
-                  >
-                    <Text style={styles.modalButtonGhostText}>Đóng</Text>
-                  </TouchableOpacity>
+          <Modal
+            visible={modalVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={closeModal}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalCard}>
+                <View style={styles.modalIcon}>
+                  <Text style={styles.modalIconText}>✅</Text>
                 </View>
+                <Text style={styles.modalTitle}>Đăng ký thành công</Text>
+                <Text style={styles.modalMessage}>{registerMessage}</Text>
+                <TouchableOpacity
+                  style={styles.modalButtonPrimary}
+                  onPress={() => {
+                    closeModal();
+                    navigation.navigate("Login");
+                  }}
+                >
+                  <Text style={styles.modalButtonPrimaryText}>Đăng nhập</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalButtonGhost}
+                  onPress={closeModal}
+                >
+                  <Text style={styles.modalButtonGhostText}>Đóng</Text>
+                </TouchableOpacity>
               </View>
-            </Modal>
-          )}
+            </View>
+          </Modal>
         </View>
       </LinearGradient>
     </View>

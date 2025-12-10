@@ -54,7 +54,9 @@ const RegisterStudentCardScreen: React.FC<Props> = ({ navigation, route }) => {
     // Yêu cầu quyền truy cập thư viện ảnh
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      setError("Ứng dụng cần quyền truy cập thư viện ảnh để tải ảnh thẻ sinh viên.");
+      setError(
+        "Ứng dụng cần quyền truy cập thư viện ảnh để tải ảnh thẻ sinh viên."
+      );
       return;
     }
 
@@ -142,7 +144,7 @@ const RegisterStudentCardScreen: React.FC<Props> = ({ navigation, route }) => {
 
       const message =
         "Đăng ký thành công, tài khoản đang chờ duyệt. Vui lòng chờ admin xác nhận.";
-      navigation.navigate("AuthLanding");
+      navigation.navigate("AuthLanding", { registerMessage: message });
     } catch (e: any) {
       console.log("Register error:", e?.response ?? e);
       const message =
@@ -187,7 +189,10 @@ const RegisterStudentCardScreen: React.FC<Props> = ({ navigation, route }) => {
                 <View style={styles.inputContainer}>
                   <Text style={styles.label}>Ảnh thẻ sinh viên *</Text>
                   {localImageUri ? (
-                    <Image source={{ uri: localImageUri }} style={styles.preview} />
+                    <Image
+                      source={{ uri: localImageUri }}
+                      style={styles.preview}
+                    />
                   ) : (
                     <Text style={styles.helperText}>
                       Vui lòng chọn ảnh thẻ sinh viên từ thư viện.
@@ -376,5 +381,3 @@ const styles = StyleSheet.create({
 });
 
 export default RegisterStudentCardScreen;
-
-
