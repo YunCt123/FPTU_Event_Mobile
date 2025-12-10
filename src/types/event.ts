@@ -32,6 +32,7 @@ export interface Event {
   endTimeRegister: string;
   startTime: string;
   endTime: string;
+  category: string;
   status: EventStatus;
   maxCapacity: number;
   registeredCount: number;

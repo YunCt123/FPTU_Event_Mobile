@@ -15,6 +15,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { eventService } from "../../services/eventService";
+import EventRegisterModal from "../../components/Event/EventRegisterModal";
 import { Event, EventStatus } from "../../types/event";
 import { RootStackParamList } from "../../types/navigation";
 import { GradientButton } from "../../components";
@@ -23,7 +24,6 @@ type EventDetailScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "EventDetails">;
   route: RouteProp<RootStackParamList, "EventDetails">;
 };
-
 
 const STATUS_COLORS: Record<EventStatus, string> = {
   PUBLISHED: "#4CAF50",
@@ -39,6 +39,10 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
   const { eventId } = route.params;
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRegisterModalVisible, setRegisterModalVisible] = useState(false);
+  const [selectedSeatLabel, setSelectedSeatLabel] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     fetchEventDetail();
@@ -54,13 +58,13 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
     } catch (error) {
       console.error("Failed to fetch event detail", error);
       Alert.alert(
-        "Lỗi", 
+        "Lỗi",
         "Không thể tải thông tin sự kiện. Vui lòng thử lại sau.",
         [
           {
             text: "OK",
-            onPress: () => navigation.goBack()
-          }
+            onPress: () => navigation.goBack(),
+          },
         ]
       );
     } finally {
@@ -120,15 +124,38 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
     return (
       <View style={styles.loadingContainer}>
         <Text style={{ color: COLORS.text }}>Không tìm thấy sự kiện</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={{ marginTop: 20, padding: 10, backgroundColor: COLORS.primary, borderRadius: 8 }}
+          style={{
+            marginTop: 20,
+            padding: 10,
+            backgroundColor: COLORS.primary,
+            borderRadius: 8,
+          }}
         >
           <Text style={{ color: "#FFF" }}>Quay lại</Text>
         </TouchableOpacity>
       </View>
     );
   }
+
+  const isRegisterAvailable = canRegister();
+  const remainingSlots = Math.max(event.maxCapacity - event.registeredCount, 0);
+  const buttonLabel = isRegisterAvailable
+    ? "Đăng ký tham gia"
+    : event.registeredCount >= event.maxCapacity
+    ? "Đã hết chỗ"
+    : "Chưa mở đăng ký";
+  const buttonSubLabel = selectedSeatLabel
+    ? `Ghế đã chọn: ${selectedSeatLabel}`
+    : isRegisterAvailable
+    ? `Còn ${remainingSlots} chỗ trống`
+    : event.registeredCount >= event.maxCapacity
+    ? "Hãy theo dõi sự kiện khác"
+    : `Mở đăng ký từ ${formatDate(event.startTimeRegister)}`;
+  const buttonGradient = isRegisterAvailable
+    ? ["#FF9A3C", "#FF6A00"]
+    : ["#C8C8C8", "#E0E0E0"];
 
   return (
     <View style={styles.container}>
@@ -172,9 +199,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
                 { backgroundColor: STATUS_COLORS[event.status] },
               ]}
             >
-              <Text style={styles.statusText}>
-                {event.status}
-              </Text>
+              <Text style={styles.statusText}>{event.status}</Text>
             </View>
 
             {/* Event Title */}
@@ -206,7 +231,11 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
               </View>
               {event.isGlobal && (
                 <View style={styles.statItem}>
-                  <Ionicons name="globe-outline" size={20} color={COLORS.primary} />
+                  <Ionicons
+                    name="globe-outline"
+                    size={20}
+                    color={COLORS.primary}
+                  />
                   <Text style={styles.statText}>Toàn trường</Text>
                 </View>
               )}
@@ -215,7 +244,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
             {/* Event Time & Location Card */}
             <View style={styles.infoCard}>
               <Text style={styles.cardTitle}>Thông tin sự kiện</Text>
-              
+
               <View style={styles.infoRow}>
                 <Ionicons
                   name="time-outline"
@@ -225,7 +254,8 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Thời gian diễn ra</Text>
                   <Text style={styles.infoValue}>
-                    {formatDate(event.startTime)} • {formatTime(event.startTime)} - {formatTime(event.endTime)}
+                    {formatDate(event.startTime)} •{" "}
+                    {formatTime(event.startTime)} - {formatTime(event.endTime)}
                   </Text>
                 </View>
               </View>
@@ -241,7 +271,8 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Đăng ký</Text>
                   <Text style={styles.infoValue}>
-                    {formatDate(event.startTimeRegister)} - {formatDate(event.endTimeRegister)}
+                    {formatDate(event.startTimeRegister)} -{" "}
+                    {formatDate(event.endTimeRegister)}
                   </Text>
                 </View>
               </View>
@@ -268,7 +299,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
             {/* Organizer & Host Card */}
             <View style={styles.infoCard}>
               <Text style={styles.cardTitle}>Ban tổ chức</Text>
-              
+
               <View style={styles.infoRow}>
                 <Ionicons
                   name="business-outline"
@@ -306,7 +337,11 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
             {/* Global Badge */}
             {event.isGlobal && (
               <View style={styles.globalBadge}>
-                <Ionicons name="globe-outline" size={16} color={COLORS.primary} />
+                <Ionicons
+                  name="globe-outline"
+                  size={16}
+                  color={COLORS.primary}
+                />
                 <Text style={styles.globalText}>Sự kiện toàn trường</Text>
               </View>
             )}
@@ -315,20 +350,61 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
 
         {/* Register Button */}
         <View style={styles.footer}>
-          <GradientButton
-            title={
-              canRegister()
-                ? "Đăng ký tham gia"
-                : event.registeredCount >= event.maxCapacity
-                ? "Đã hết chỗ"
-                : "Chưa mở đăng ký"
-            }
+          <TouchableOpacity
+            style={[
+              styles.registerButton,
+              !isRegisterAvailable && styles.registerButtonDisabled,
+            ]}
+            disabled={!isRegisterAvailable}
             onPress={() => {
-              Alert.alert("Đăng ký", "Chức năng đăng ký đang được phát triển");
+              if (isRegisterAvailable) {
+                setRegisterModalVisible(true);
+              }
             }}
-            disabled={!canRegister()}
-          />
+          >
+            <LinearGradient
+              colors={buttonGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.registerButtonGradient}
+            >
+              <Ionicons
+                name="flash-outline"
+                size={20}
+                color="#FFFFFF"
+                style={styles.registerButtonIcon}
+              />
+              <View style={styles.registerButtonTextContainer}>
+                <Text style={styles.registerButtonText}>{buttonLabel}</Text>
+                <Text
+                  style={[
+                    styles.registerButtonSubText,
+                    !isRegisterAvailable && { color: "rgba(255,255,255,0.7)" },
+                  ]}
+                >
+                  {buttonSubLabel}
+                </Text>
+              </View>
+              <View style={styles.registerButtonArrow}>
+                <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
+
+        <EventRegisterModal
+          visible={isRegisterModalVisible}
+          onClose={() => setRegisterModalVisible(false)}
+          venueId={event.venueId}
+          eventId={eventId}
+          eventTitle={event.title}
+          onSeatSelected={(seat) =>
+            setSelectedSeatLabel(`${seat.rowLabel}${seat.colLabel}`)
+          }
+          onRegisterSuccess={() => {
+            fetchEventDetail();
+          }}
+        />
       </LinearGradient>
     </View>
   );
@@ -509,27 +585,55 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: "absolute",
-    bottom: 0,
+    bottom: 10,
     left: 0,
     right: 0,
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    backgroundColor: "transparent",
+    borderTopLeftRadius: RADII.xl,
+    borderTopRightRadius: RADII.xl,
     ...SHADOWS.lg,
   },
   registerButton: {
-    paddingVertical: SPACING.md,
-    borderRadius: RADII.md,
-    alignItems: "center",
-    ...SHADOWS.md,
+    borderRadius: RADII.xl,
+    overflow: "hidden",
   },
   registerButtonDisabled: {
-    backgroundColor: "#CCCCCC",
-    opacity: 0.6,
+    opacity: 0.8,
+  },
+  registerButtonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+  },
+  registerButtonIcon: {
+    marginRight: SPACING.md,
+  },
+  registerButtonTextContainer: {
+    flex: 1,
   },
   registerButtonText: {
     color: "#FFFFFF",
-    fontSize: FONTS.md,
+    fontSize: FONTS.lg,
     fontWeight: "700",
+  },
+  registerButtonSubText: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: FONTS.sm,
+    marginTop: 2,
+  },
+  registerButtonArrow: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: SPACING.md,
   },
 });
 
