@@ -8,6 +8,7 @@ import {
   RegisterRequest,
   RegisterResponse,
   RegisterSuccessResponse,
+  GoogleLoginResponse,
 } from "../types/auth";
 import { User, UpdateUserProfileRequest } from "../types/user";
 
@@ -19,6 +20,24 @@ class AuthService {
     if (refreshToken) {
       await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
     }
+  }
+
+  /**
+   * Get Google OAuth URL để redirect user
+   */
+  getGoogleAuthUrl(): string {
+    return `${process.env.EXPO_PUBLIC_API_URL}${AUTH_ENDPOINTS.GOOGLE}`;
+  }
+
+  /**
+   * Xử lý Google login sau khi callback
+   * Backend sẽ trả về accessToken sau khi user đăng nhập Google thành công
+   */
+  async handleGoogleCallback(
+    accessToken: string,
+    refreshToken?: string
+  ): Promise<void> {
+    await this.persistTokens(accessToken, refreshToken);
   }
 
   async login(payload: LoginRequest): Promise<LoginResponse> {

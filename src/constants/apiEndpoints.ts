@@ -13,6 +13,8 @@ export const AUTH_ENDPOINTS = {
   REGISTER: "/auth/register",
   LOGIN: "/auth/login",
   REFRESH: "/auth/refresh",
+  GOOGLE: "auth/google",
+  GOOGLE_CALLBACK: "auth/google/callback",
 };
 
 export const USER_ENDPOINTS = {

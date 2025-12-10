@@ -7,10 +7,14 @@ import {
   Image,
   Animated,
   Modal,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RouteProp } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
+import * as WebBrowser from "expo-web-browser";
+import { Ionicons } from "@expo/vector-icons";
 import {
   COLORS,
   SPACING,
@@ -19,6 +23,7 @@ import {
   RADII,
   SIZES,
 } from "../../utils/theme";
+import { authService } from "../../services/authService";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const img = require("../../assets/fpt_logo.png");
 import { AuthStackParamList } from "../../types/navigation";
@@ -35,6 +40,7 @@ const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
   const logoSlideAnim = useRef(new Animated.Value(-300)).current;
   const titleSlideAnim = useRef(new Animated.Value(-300)).current;
   const buttonFadeAnim = useRef(new Animated.Value(0)).current;
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   useEffect(() => {
     Animated.sequence([
@@ -72,6 +78,46 @@ const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
   const closeModal = () => {
     setModalVisible(false);
     navigation.setParams({ registerMessage: undefined } as any);
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setIsGoogleLoading(true);
+      const googleAuthUrl = authService.getGoogleAuthUrl();
+
+      // Mở browser để đăng nhập Google
+      const result = await WebBrowser.openAuthSessionAsync(
+        googleAuthUrl,
+        "fptu-event://" // Deep link scheme
+      );
+
+      if (result.type === "success" && result.url) {
+        // Parse URL để lấy token từ callback
+        const url = new URL(result.url);
+        const accessToken = url.searchParams.get("accessToken");
+        const refreshToken = url.searchParams.get("refreshToken");
+
+        if (accessToken) {
+          await authService.handleGoogleCallback(
+            accessToken,
+            refreshToken || undefined
+          );
+          // Navigation sẽ được xử lý tự động bởi RootNavigator khi có token
+        } else {
+          Alert.alert("Lỗi", "Không nhận được token từ Google");
+        }
+      } else if (result.type === "cancel") {
+        // User cancelled - không cần hiện alert
+      }
+    } catch (error: any) {
+      console.error("Google login error:", error);
+      Alert.alert(
+        "Lỗi đăng nhập",
+        error?.message || "Không thể đăng nhập bằng Google. Vui lòng thử lại."
+      );
+    } finally {
+      setIsGoogleLoading(false);
+    }
   };
 
   return (
@@ -113,6 +159,29 @@ const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
               onPress={() => navigation.navigate("Register")}
             >
               <Text style={styles.registerButtonText}>Đăng ký</Text>
+            </TouchableOpacity>
+
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>hoặc</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <TouchableOpacity
+              style={styles.googleButton}
+              onPress={handleGoogleLogin}
+              disabled={isGoogleLoading}
+            >
+              {isGoogleLoading ? (
+                <ActivityIndicator size="small" color="#4285F4" />
+              ) : (
+                <>
+                  <Ionicons name="logo-google" size={20} color="#4285F4" />
+                  <Text style={styles.googleButtonText}>
+                    Đăng nhập với Google
+                  </Text>
+                </>
+              )}
             </TouchableOpacity>
           </Animated.View>
 
@@ -212,6 +281,38 @@ const styles = StyleSheet.create({
   },
   registerButtonText: {
     color: COLORS.primary,
+    fontSize: FONTS.bodyLarge,
+    fontWeight: "600",
+  },
+  dividerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: SPACING.sm,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#D1D5DB",
+  },
+  dividerText: {
+    marginHorizontal: SPACING.md,
+    color: "#6B7280",
+    fontSize: FONTS.body,
+  },
+  googleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    height: SIZES.button.height,
+    backgroundColor: COLORS.white,
+    borderRadius: RADII.button,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    gap: SPACING.sm,
+    ...SHADOWS.sm,
+  },
+  googleButtonText: {
+    color: "#374151",
     fontSize: FONTS.bodyLarge,
     fontWeight: "600",
   },

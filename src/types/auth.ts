@@ -38,3 +38,9 @@ export interface RegisterSuccessResponse {
 export type RegisterResponse =
   | RegisterPendingResponse
   | RegisterSuccessResponse;
+
+export interface GoogleLoginResponse {
+  message: string;
+  accessToken: string;
+  refreshToken?: string;
+}
