@@ -62,14 +62,15 @@ apiClient.interceptors.response.use(
             { timeout: API_CONFIG.TIMEOUT }
           );
 
-          const { accessToken, refreshToken: newRefreshToken } =
-            response.data.data.tokens;
+          const { accessToken, refreshToken: newRefreshToken } = response.data;
 
           await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
-          await AsyncStorage.setItem(
-            STORAGE_KEYS.REFRESH_TOKEN,
-            newRefreshToken
-          );
+          if (newRefreshToken) {
+            await AsyncStorage.setItem(
+              STORAGE_KEYS.REFRESH_TOKEN,
+              newRefreshToken
+            );
+          }
 
           originalRequest.headers = originalRequest.headers ?? {};
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
