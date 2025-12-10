@@ -4,7 +4,9 @@ import {
   Alert,
   Animated,
   Dimensions,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -293,14 +295,15 @@ const TicketScanScreen = () => {
         animationType="slide"
         onRequestClose={() => setShowManualInput(false)}
       >
-        <Pressable
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.modalOverlay}
-          onPress={() => setShowManualInput(false)}
         >
           <Pressable
-            style={styles.manualInputContainer}
-            onPress={(e) => e.stopPropagation()}
-          >
+            style={styles.modalBackdrop}
+            onPress={() => setShowManualInput(false)}
+          />
+          <View style={styles.manualInputContainer}>
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>Nhập mã QR thủ công</Text>
             <Text style={styles.modalSubtitle}>
@@ -322,7 +325,6 @@ const TicketScanScreen = () => {
                 onChangeText={setManualQr}
                 autoCapitalize="none"
                 autoCorrect={false}
-                autoFocus
               />
             </View>
 
@@ -346,8 +348,8 @@ const TicketScanScreen = () => {
                 </LinearGradient>
               </TouchableOpacity>
             </View>
-          </Pressable>
-        </Pressable>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Result Modal */}
@@ -640,8 +642,11 @@ const styles = StyleSheet.create({
   // Manual Input Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "flex-end",
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   manualInputContainer: {
     backgroundColor: COLORS.white,
