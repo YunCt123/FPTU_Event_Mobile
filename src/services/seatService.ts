@@ -1,3 +1,4 @@
+import { event } from "react-native/types_generated/Libraries/Animated/AnimatedExports";
 import { api } from "../api/api";
 import { SEAT_ENDPOINTS } from "../constants";
 
@@ -11,9 +12,9 @@ export interface Seat {
 }
 
 class SeatService {
-  async getSeatsByVenueId(venueId: number): Promise<Seat[]> {
+  async getSeatsByVenueId(venueId: number, eventId: string): Promise<Seat[]> {
     const data = await api.get<Seat[]>(
-      `${SEAT_ENDPOINTS.GET}/venue/${venueId}`
+      `${SEAT_ENDPOINTS.GET}/venue/${venueId}?eventId=${eventId}`
     );
     console.log(data);
     return Array.isArray(data) ? data : [];

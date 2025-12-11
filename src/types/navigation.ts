@@ -33,10 +33,13 @@ export type RootStackParamList = {
     ScanQRCode: { eventId: string; eventTitle?: string; eventBanner?: string };
     ManualCheckIn: { eventId: string; eventTitle?: string; eventBanner?: string };
     IncidentReport: { eventId: string; eventTitle?: string };
+
+    // Staff
+    StaffScan: undefined;
 };
 
 export type AuthStackParamList = {
-  AuthLanding: undefined;
+  AuthLanding: { registerMessage?: string } | undefined;
   Login: undefined;
   Register: undefined;
   RegisterAdditional: {

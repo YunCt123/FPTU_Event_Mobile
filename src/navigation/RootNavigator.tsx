@@ -15,6 +15,7 @@ import ScanQRCodeScreen from "../screens/staff/ScanQRCodeScreen";
 import ManualCheckInScreen from "../screens/staff/ManualCheckInScreen";
 import IncidentReportScreen from "../screens/staff/IncidentReportScreen";
 import { RootStackParamList } from "../types/navigation";
+import TicketScanScreen from "../screens/staff/TicketScanScreen";
 
 export type { RootStackParamList };
 
@@ -64,6 +65,7 @@ const RootNavigator: React.FC = () => {
         <Stack.Screen name="ScanQRCode" component={ScanQRCodeScreen} />
         <Stack.Screen name="ManualCheckIn" component={ManualCheckInScreen} />
         <Stack.Screen name="IncidentReport" component={IncidentReportScreen} />
+        <Stack.Screen name="StaffScan" component={TicketScanScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

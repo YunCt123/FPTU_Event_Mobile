@@ -12,15 +12,18 @@ import {
 import { User, UpdateUserProfileRequest } from "../types/user";
 
 class AuthService {
-  private async persistAccessToken(token?: string) {
-    if (token) {
-      await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
+  private async persistTokens(accessToken?: string, refreshToken?: string) {
+    if (accessToken) {
+      await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+    }
+    if (refreshToken) {
+      await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
     }
   }
 
   async login(payload: LoginRequest): Promise<LoginResponse> {
     const data = await api.post<LoginResponse>(AUTH_ENDPOINTS.LOGIN, payload);
-    await this.persistAccessToken(data.accessToken);
+    await this.persistTokens(data.accessToken, data.refreshToken);
     return data;
   }
 
@@ -31,7 +34,7 @@ class AuthService {
     );
 
     if (this.isRegisterSuccess(data)) {
-      await this.persistAccessToken(data.accessToken);
+      await this.persistTokens(data.accessToken);
     }
 
     return data;

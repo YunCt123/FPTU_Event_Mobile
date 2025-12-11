@@ -12,6 +12,7 @@ export const API_CONFIG = {
 export const AUTH_ENDPOINTS = {
   REGISTER: "/auth/register",
   LOGIN: "/auth/login",
+  REFRESH: "/auth/refresh",
 };
 
 export const USER_ENDPOINTS = {
@@ -29,10 +30,6 @@ export const EVENT_ENDPOINTS = {
 
 export const TICKET_ENDPOINTS = {
   REGISTER: "/tickets",
-  LIST: "/tickets/me",
-  CREATE: "/tickets",
-  BY_ID: (id: string) => `/tickets/${id}`,
-  BY_QR: (qrCode: string) => `/tickets/qr/${qrCode}`,
 };
 
 export const SEAT_ENDPOINTS = {
@@ -41,6 +38,7 @@ export const SEAT_ENDPOINTS = {
   CREATE: "/tickets",
   BY_ID: (id: string) => `/tickets/${id}`,
   BY_QR: (qrCode: string) => `/tickets/qr/${qrCode}`,
+  SCAN: "/tickets/scan",
 };
 
 export const STAFF_ENDPOINTS = {
