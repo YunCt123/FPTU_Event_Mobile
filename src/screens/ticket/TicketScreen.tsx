@@ -10,17 +10,13 @@ import {
   Alert,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  COLORS,
-  SPACING,
-  FONTS,
-  RADII,
-  SHADOWS,
-} from "../../utils/theme";
+import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { LinearGradient } from "expo-linear-gradient";
 import { ticketService } from "../../services/ticketService";
 import { Ticket, TicketStatus } from "../../types/ticket";
+import { socketService, CheckinPayload } from "../../services/socketService";
 
 type TicketScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -48,34 +44,94 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const fetchTickets = useCallback(async (pageNum: number = 1, isRefresh: boolean = false) => {
-    try {
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
+  const fetchTickets = useCallback(
+    async (pageNum: number = 1, isRefresh: boolean = false) => {
+      try {
+        if (isRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
+
+        const response = await ticketService.getMyTickets({
+          page: pageNum,
+          limit: 10,
+        });
+
+        setTickets(response.data || []);
+        setTotalPages(response.meta?.totalPages || 1);
+        setPage(pageNum);
+      } catch (error) {
+        console.error("Failed to fetch tickets", error);
+        Alert.alert("Lỗi", "Không thể tải danh sách vé");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
-
-      const response = await ticketService.getMyTickets({
-        page: pageNum,
-        limit: 10,
-      });
-
-      setTickets(response.data || []);
-      setTotalPages(response.meta?.totalPages || 1);
-      setPage(pageNum);
-    } catch (error) {
-      console.error("Failed to fetch tickets", error);
-      Alert.alert("Lỗi", "Không thể tải danh sách vé");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
     fetchTickets(1);
   }, []);
+
+  // Realtime check-in listener - subscribe to all events that user has tickets for
+  useEffect(() => {
+    if (tickets.length === 0) return;
+
+    // Get unique event IDs from tickets
+    const eventIds = [
+      ...new Set(tickets.map((t) => t.event?.id).filter(Boolean)),
+    ] as string[];
+
+    // Connect socket
+    socketService.connect();
+
+    // Join all event rooms
+    eventIds.forEach((eventId) => {
+      socketService.joinEventRoom(eventId);
+    });
+
+    // Listen for check-in events
+    const unsubscribe = socketService.onCheckin((payload: CheckinPayload) => {
+      // Check if this check-in is for one of our tickets
+      const ticketIndex = tickets.findIndex((t) => t.id === payload.ticketId);
+
+      if (ticketIndex !== -1) {
+        console.log("[Realtime] Your ticket was checked in!", payload);
+
+        // Update ticket status locally
+        setTickets((prev) =>
+          prev.map((t) =>
+            t.id === payload.ticketId
+              ? {
+                  ...t,
+                  status: "USED" as TicketStatus,
+                  checkinTime: payload.checkinTime,
+                }
+              : t
+          )
+        );
+
+        // Modal will be shown in TicketQRCodeScreen, just update status here
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      eventIds.forEach((eventId) => {
+        socketService.leaveEventRoom(eventId);
+      });
+    };
+  }, [tickets.length]); // Re-subscribe when tickets change
+
+  // Refresh tickets when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchTickets(1, true);
+    }, [fetchTickets])
+  );
 
   const onRefresh = () => {
     fetchTickets(1, true);
@@ -117,7 +173,11 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
     if (activeTab === "valid") {
       return ticket.status === "VALID";
     } else {
-      return ticket.status === "USED" || ticket.status === "CANCELLED" || ticket.status === "EXPIRED";
+      return (
+        ticket.status === "USED" ||
+        ticket.status === "CANCELLED" ||
+        ticket.status === "EXPIRED"
+      );
     }
   });
 
@@ -142,163 +202,175 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
           >
-          <View style={styles.header}>
-            <Text style={styles.title}>Vé của tôi</Text>
+            <View style={styles.header}>
+              <Text style={styles.title}>Vé của tôi</Text>
 
-            {/* Tabs */}
-            <View style={styles.tabContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.tab,
-                  activeTab === "valid" && styles.tabActive,
-                ]}
-                onPress={() => setActiveTab("valid")}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    activeTab === "valid" && styles.tabTextActive,
-                  ]}
-                >
-                  Có hiệu lực
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.tab, activeTab === "used" && styles.tabActive]}
-                onPress={() => setActiveTab("used")}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    activeTab === "used" && styles.tabTextActive,
-                  ]}
-                >
-                  Đã qua
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          {filteredTickets.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Ionicons
-                name="ticket-outline"
-                size={64}
-                color={COLORS.text}
-                style={{ opacity: 0.3, marginBottom: SPACING.lg }}
-              />
-              <Text style={styles.emptyText}>
-                {activeTab === "valid"
-                  ? "Bạn chưa có vé nào"
-                  : "Chưa có vé đã qua"}
-              </Text>
-              {activeTab === "valid" && (
+              {/* Tabs */}
+              <View style={styles.tabContainer}>
                 <TouchableOpacity
-                  style={styles.browseButton}
-                  onPress={() => navigation.navigate("Event")}
+                  style={[
+                    styles.tab,
+                    activeTab === "valid" && styles.tabActive,
+                  ]}
+                  onPress={() => setActiveTab("valid")}
                 >
-                  <Text style={styles.browseButtonText}>Khám phá sự kiện</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          ) : (
-            <View style={styles.ticketsContainer}>
-              {filteredTickets.map((ticket) => (
-                <TouchableOpacity 
-                  key={ticket.id} 
-                  style={styles.ticketCard}
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    navigation.navigate("TicketDetails", { ticketId: ticket.id });
-                  }}
-                >
-                  <View style={styles.ticketHeader}>
-                    <View style={styles.ticketIconContainer}>
-                      <Ionicons
-                        name={getTicketIcon(ticket.status)}
-                        size={24}
-                        color={COLORS.primary}
-                      />
-                    </View>
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        { backgroundColor: STATUS_COLORS[ticket.status] },
-                      ]}
-                    >
-                      <Text style={styles.statusText}>
-                        {STATUS_LABELS[ticket.status]}
-                      </Text>
-                    </View>
-                  </View>
-
-                   <Text style={styles.ticketTitle} numberOfLines={2}>
-                    Tên sự kiện: {ticket.event.title}
+                  <Text
+                    style={[
+                      styles.tabText,
+                      activeTab === "valid" && styles.tabTextActive,
+                    ]}
+                  >
+                    Có hiệu lực
                   </Text>
-
-                  <View style={styles.ticketDetails}>
-                    <View style={styles.ticketDetail}>
-                      <Ionicons
-                        name="calendar-outline"
-                        size={14}
-                        color={COLORS.text}
-                        style={{ opacity: 0.7 }}
-                      />
-                      <Text style={styles.detailText}>
-                        {formatDate(ticket.bookingDate)}
-                      </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.tab, activeTab === "used" && styles.tabActive]}
+                  onPress={() => setActiveTab("used")}
+                >
+                  <Text
+                    style={[
+                      styles.tabText,
+                      activeTab === "used" && styles.tabTextActive,
+                    ]}
+                  >
+                    Đã qua
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            {filteredTickets.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons
+                  name="ticket-outline"
+                  size={64}
+                  color={COLORS.text}
+                  style={{ opacity: 0.3, marginBottom: SPACING.lg }}
+                />
+                <Text style={styles.emptyText}>
+                  {activeTab === "valid"
+                    ? "Bạn chưa có vé nào"
+                    : "Chưa có vé đã qua"}
+                </Text>
+                {activeTab === "valid" && (
+                  <TouchableOpacity
+                    style={styles.browseButton}
+                    onPress={() => navigation.navigate("Event")}
+                  >
+                    <Text style={styles.browseButtonText}>
+                      Khám phá sự kiện
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ) : (
+              <View style={styles.ticketsContainer}>
+                {filteredTickets.map((ticket) => (
+                  <TouchableOpacity
+                    key={ticket.id}
+                    style={styles.ticketCard}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      navigation.navigate("TicketDetails", {
+                        ticketId: ticket.id,
+                      });
+                    }}
+                  >
+                    <View style={styles.ticketHeader}>
+                      <View style={styles.ticketIconContainer}>
+                        <Ionicons
+                          name={getTicketIcon(ticket.status)}
+                          size={24}
+                          color={COLORS.primary}
+                        />
+                      </View>
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          { backgroundColor: STATUS_COLORS[ticket.status] },
+                        ]}
+                      >
+                        <Text style={styles.statusText}>
+                          {STATUS_LABELS[ticket.status]}
+                        </Text>
+                      </View>
                     </View>
-                    {ticket.checkinTime && (
+
+                    <Text style={styles.ticketTitle} numberOfLines={2}>
+                      Tên sự kiện: {ticket.event.title}
+                    </Text>
+
+                    <View style={styles.ticketDetails}>
                       <View style={styles.ticketDetail}>
                         <Ionicons
-                          name="checkmark-circle-outline"
+                          name="calendar-outline"
                           size={14}
                           color={COLORS.text}
                           style={{ opacity: 0.7 }}
                         />
                         <Text style={styles.detailText}>
-                          {formatTime(ticket.checkinTime)}
+                          {formatDate(ticket.bookingDate)}
+                        </Text>
+                      </View>
+                      {ticket.checkinTime && (
+                        <View style={styles.ticketDetail}>
+                          <Ionicons
+                            name="checkmark-circle-outline"
+                            size={14}
+                            color={COLORS.text}
+                            style={{ opacity: 0.7 }}
+                          />
+                          <Text style={styles.detailText}>
+                            {formatTime(ticket.checkinTime)}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
+                    {ticket.user && (
+                      <View style={styles.ticketDetail}>
+                        <Ionicons
+                          name="person-outline"
+                          size={14}
+                          color={COLORS.text}
+                          style={{ opacity: 0.7 }}
+                        />
+                        <Text style={styles.detailText}>
+                          {ticket.user.firstName} {ticket.user.lastName}
                         </Text>
                       </View>
                     )}
-                  </View>
 
-                  {ticket.user && (
-                    <View style={styles.ticketDetail}>
-                      <Ionicons
-                        name="person-outline"
-                        size={14}
-                        color={COLORS.text}
-                        style={{ opacity: 0.7 }}
-                      />
-                      <Text style={styles.detailText}>
-                        {ticket.user.firstName} {ticket.user.lastName}
+                    <View style={styles.divider} />
+
+                    <View style={styles.ticketCodeContainer}>
+                      <Text style={styles.ticketCodeLabel}>Mã QR</Text>
+                      <Text style={styles.ticketCode} numberOfLines={1}>
+                        {ticket.qrCode}
                       </Text>
                     </View>
-                  )}
 
-                  <View style={styles.divider} />
-
-                  <View style={styles.ticketCodeContainer}>
-                    <Text style={styles.ticketCodeLabel}>Mã QR</Text>
-                    <Text style={styles.ticketCode} numberOfLines={1}>
-                      {ticket.qrCode}
-                    </Text>
-                  </View>
-
-                  {ticket.status === "VALID" && (
-                    <TouchableOpacity 
-                      style={styles.viewButton}
-                      onPress={() => navigation.navigate("TicketQRCode", { ticketId: ticket.id })}
-                    >
-                      <Text style={styles.viewButtonText}>Xem QR Code</Text>
-                      <Ionicons name="qr-code" size={16} color={COLORS.white} />
-                    </TouchableOpacity>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </ScrollView>
+                    {ticket.status === "VALID" && (
+                      <TouchableOpacity
+                        style={styles.viewButton}
+                        onPress={() =>
+                          navigation.navigate("TicketQRCode", {
+                            ticketId: ticket.id,
+                          })
+                        }
+                      >
+                        <Text style={styles.viewButtonText}>Xem QR Code</Text>
+                        <Ionicons
+                          name="qr-code"
+                          size={16}
+                          color={COLORS.white}
+                        />
+                      </TouchableOpacity>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </ScrollView>
         )}
       </LinearGradient>
     </View>

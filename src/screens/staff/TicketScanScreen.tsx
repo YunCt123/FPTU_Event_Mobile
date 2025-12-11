@@ -17,17 +17,27 @@ import {
 import { CameraView, Camera } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRoute, RouteProp } from "@react-navigation/native";
 import { ticketService } from "../../services/ticketService";
 import { ScanTicketResponse } from "../../types/ticket";
 import { COLORS, FONTS, RADII, SHADOWS, SPACING } from "../../utils/theme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { STORAGE_KEYS } from "../../api/api";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRealtimeCheckin } from "../../hooks/useRealtimeCheckin";
+import { RootStackParamList } from "../../types/navigation";
+import { CheckinPayload } from "../../services/socketService";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const SCANNER_SIZE = SCREEN_WIDTH * 0.7;
 
+type StaffScanRouteProp = RouteProp<RootStackParamList, "StaffScan">;
+
 const TicketScanScreen = () => {
+  const route = useRoute<StaffScanRouteProp>();
+  const eventId = route.params?.eventId;
+  const eventTitle = route.params?.eventTitle;
+
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -37,9 +47,22 @@ const TicketScanScreen = () => {
   const [staffId, setStaffId] = useState<number | null>(null);
   const [showManualInput, setShowManualInput] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
+  const [realtimeCheckins, setRealtimeCheckins] = useState<CheckinPayload[]>(
+    []
+  );
 
   const scanLineAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  // Realtime check-in hook - only active when eventId is provided
+  const { isConnected, checkinCount, recentCheckins } = useRealtimeCheckin({
+    eventId: eventId || "",
+    onCheckin: (payload) => {
+      // Update local state with realtime checkins from other staff
+      setRealtimeCheckins((prev) => [payload, ...prev].slice(0, 10));
+      console.log("[Realtime] New check-in from another staff:", payload);
+    },
+  });
 
   useEffect(() => {
     const requestPermission = async () => {
@@ -214,9 +237,35 @@ const TicketScanScreen = () => {
         {/* Header */}
         <SafeAreaView edges={["top"]} style={styles.header}>
           <Text style={styles.headerTitle}>Quét vé</Text>
-          <Text style={styles.headerSubtitle}>
-            Đưa mã QR vào khung để check-in
-          </Text>
+          {eventTitle ? (
+            <Text style={styles.headerEventName} numberOfLines={1}>
+              {eventTitle}
+            </Text>
+          ) : (
+            <Text style={styles.headerSubtitle}>
+              Đưa mã QR vào khung để check-in
+            </Text>
+          )}
+
+          {/* Realtime status indicator */}
+          {eventId && (
+            <View style={styles.realtimeStatus}>
+              <View
+                style={[
+                  styles.connectionDot,
+                  { backgroundColor: isConnected ? "#10b981" : "#ef4444" },
+                ]}
+              />
+              <Text style={styles.realtimeText}>
+                {isConnected ? "Realtime" : "Đang kết nối..."}
+              </Text>
+              {checkinCount > 0 && (
+                <View style={styles.checkinCountBadge}>
+                  <Text style={styles.checkinCountText}>+{checkinCount}</Text>
+                </View>
+              )}
+            </View>
+          )}
         </SafeAreaView>
 
         {/* Scanner frame */}
@@ -528,6 +577,40 @@ const styles = StyleSheet.create({
     fontSize: FONTS.bodyLarge,
     textAlign: "center",
     marginTop: SPACING.xs,
+  },
+  headerEventName: {
+    color: COLORS.primary,
+    fontSize: FONTS.bodyLarge,
+    fontWeight: "600",
+    textAlign: "center",
+    marginTop: SPACING.xs,
+  },
+  realtimeStatus: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: SPACING.sm,
+    gap: 6,
+  },
+  connectionDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  realtimeText: {
+    color: "rgba(255, 255, 255, 0.7)",
+    fontSize: FONTS.caption,
+  },
+  checkinCountBadge: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  checkinCountText: {
+    color: COLORS.white,
+    fontSize: FONTS.caption,
+    fontWeight: "700",
   },
   scannerContainer: {
     flex: 1,
