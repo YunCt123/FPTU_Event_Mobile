@@ -21,7 +21,7 @@ import {
 import { seatService, Seat } from "../../services/seatService";
 import { eventService } from "../../services/eventService";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
-import { Alert } from "react-native";
+import CustomAlertModal from "../CustomAlertModal";
 
 interface EventRegisterModalProps {
   visible: boolean;
@@ -62,6 +62,12 @@ const EventRegisterModal: React.FC<EventRegisterModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
   const [registering, setRegistering] = useState(false);
+  const [alertConfig, setAlertConfig] = useState<{
+    visible: boolean;
+    type: "success" | "error" | "warning" | "info";
+    title: string;
+    message: string;
+  }>({ visible: false, type: "info", title: "", message: "" });
 
   const baseScale = useRef(new Animated.Value(1)).current;
   const pinchScale = useRef(new Animated.Value(1)).current;
@@ -96,7 +102,7 @@ const EventRegisterModal: React.FC<EventRegisterModalProps> = ({
     try {
       setLoading(true);
       setError(null);
-      const data = await seatService.getSeatsByVenueId(id);
+      const data = await seatService.getSeatsByVenueId(id, eventId);
       setSeats(data);
     } catch (err) {
       setError("Không thể tải dữ liệu ghế. Vui lòng thử lại.");
@@ -158,30 +164,37 @@ const EventRegisterModal: React.FC<EventRegisterModalProps> = ({
         seatId: selectedSeat.id,
       });
 
-      Alert.alert(
-        "Thành công",
-        `Đăng ký thành công ghế ${selectedSeat.rowLabel}${selectedSeat.colLabel}!`,
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              onSeatSelected?.(selectedSeat);
-              onRegisterSuccess?.();
-              onClose();
-            },
-          },
-        ]
-      );
+      setAlertConfig({
+        visible: true,
+        type: "success",
+        title: "Thành công",
+        message: `Đăng ký thành công ghế ${selectedSeat.rowLabel}${selectedSeat.colLabel}!`,
+      });
     } catch (err: any) {
-      console.error("Registration error:", err);
-      Alert.alert(
-        "Lỗi đăng ký",
+      const errorMessage =
         err?.response?.data?.message ||
-          "Không thể đăng ký sự kiện. Vui lòng thử lại.",
-        [{ text: "OK" }]
-      );
+        err?.response?.data?.error ||
+        (err?.response?.status === 400
+          ? "Yêu cầu không hợp lệ. Ghế có thể đã được đặt hoặc sự kiện đã đóng đăng ký."
+          : "Không thể đăng ký sự kiện. Vui lòng thử lại.");
+
+      setAlertConfig({
+        visible: true,
+        type: "error",
+        title: "Lỗi đăng ký",
+        message: errorMessage,
+      });
     } finally {
       setRegistering(false);
+    }
+  };
+
+  const handleAlertClose = () => {
+    setAlertConfig({ ...alertConfig, visible: false });
+    if (alertConfig.type === "success") {
+      onSeatSelected?.(selectedSeat!);
+      onRegisterSuccess?.();
+      onClose();
     }
   };
 
@@ -404,6 +417,14 @@ const EventRegisterModal: React.FC<EventRegisterModalProps> = ({
             </TouchableOpacity>
           </View>
         </View>
+
+        <CustomAlertModal
+          visible={alertConfig.visible}
+          type={alertConfig.type}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          onClose={handleAlertClose}
+        />
       </View>
     </Modal>
   );
