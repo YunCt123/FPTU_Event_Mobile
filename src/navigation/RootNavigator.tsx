@@ -1,18 +1,47 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import AuthNavigator from "./AuthNavigator";
 import MainNavigator from "./MainNavigator";
+import { STORAGE_KEYS } from "../api/api";
+import ProfileScreen from "../screens/profile/ProfileScreen";
+import PersonalInfoScreen from "../screens/profile/PersonalInfoScreen";
+import EventDetailScreen from "../screens/event/EventDetailScreen";
+import TicketDetailScreen from "../screens/ticket/TicketDetailScreen";
+import TicketQRCodeScreen from "../screens/ticket/TicketQRCodeScreen";
+import TicketHistoryScreen from "../screens/ticket/TicketHistoryScreen";
+import StaffAssignedEventsScreen from "../screens/staff/StaffAssignedEventsScreen";
+import IncidentReportScreen from "../screens/staff/IncidentReportScreen";
+import IncidentHistoryScreen from "../screens/staff/IncidentHistoryScreen";
+import { RootStackParamList } from "../types/navigation";
+import TicketScanScreen from "../screens/staff/TicketScanScreen";
 
-export type RootStackParamList = {
-  Auth: undefined;
-  Main: undefined;
-};
+export type { RootStackParamList };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const RootNavigator: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [initialRoute, setInitialRoute] = useState<
+    keyof RootStackParamList | null
+  >(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+        setInitialRoute(token ? "Main" : "Auth");
+      } catch {
+        setInitialRoute("Auth");
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  if (!initialRoute) {
+    return null;
+  }
 
   return (
     <NavigationContainer>
@@ -21,12 +50,22 @@ const RootNavigator: React.FC = () => {
         screenOptions={{
           headerShown: false,
         }}
+        initialRouteName={initialRoute}
       >
-        {!isAuthenticated ? (
-          <Stack.Screen name="Auth" component={AuthNavigator} />
-        ) : (
-          <Stack.Screen name="Main" component={MainNavigator} />
-        )}
+        <Stack.Screen name="Auth" component={AuthNavigator} />
+        <Stack.Screen name="Main" component={MainNavigator} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
+        <Stack.Screen name="EventDetails" component={EventDetailScreen} />
+        <Stack.Screen name="TicketDetails" component={TicketDetailScreen} />
+        <Stack.Screen name="TicketQRCode" component={TicketQRCodeScreen} />
+        <Stack.Screen name="TicketHistory" component={TicketHistoryScreen} />
+        
+        {/* Staff Screens */}
+        <Stack.Screen name="StaffAssignedEvents" component={StaffAssignedEventsScreen} />
+        <Stack.Screen name="IncidentReport" component={IncidentReportScreen} />
+        <Stack.Screen name="IncidentHistory" component={IncidentHistoryScreen} />
+        <Stack.Screen name="StaffScan" component={TicketScanScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

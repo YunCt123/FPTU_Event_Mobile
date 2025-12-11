@@ -1,6 +1,15 @@
-import React, { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, Animated } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Animated,
+  Modal,
+} from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RouteProp } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   COLORS,
@@ -10,14 +19,18 @@ import {
   RADII,
   SIZES,
 } from "../../utils/theme";
-import img from "../../assets/fpt_logo.png";
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const img = require("../../assets/fpt_logo.png");
+import { AuthStackParamList } from "../../types/navigation";
 
 type AuthLandingScreenProps = {
-  navigation: NativeStackNavigationProp<any>;
+  navigation: NativeStackNavigationProp<AuthStackParamList, "AuthLanding">;
+  route: RouteProp<AuthStackParamList, "AuthLanding">;
 };
 
 const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
   navigation,
+  route,
 }) => {
   const logoSlideAnim = useRef(new Animated.Value(-300)).current;
   const titleSlideAnim = useRef(new Animated.Value(-300)).current;
@@ -26,16 +39,16 @@ const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
   useEffect(() => {
     Animated.sequence([
       Animated.parallel([
-      Animated.timing(logoSlideAnim, {
-        toValue: 1,
-        duration: 2000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(titleSlideAnim, {
-        toValue: 1,
-        duration: 2000,
-        useNativeDriver: true,
-      }),
+        Animated.timing(logoSlideAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(titleSlideAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
       ]),
       Animated.timing(buttonFadeAnim, {
         toValue: 1,
@@ -44,6 +57,22 @@ const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
       }),
     ]).start();
   }, []);
+
+  const registerMessage = (
+    route.params as { registerMessage?: string } | undefined
+  )?.registerMessage;
+  const [modalVisible, setModalVisible] = useState(!!registerMessage);
+
+  useEffect(() => {
+    if (registerMessage) {
+      setModalVisible(true);
+    }
+  }, [registerMessage]);
+
+  const closeModal = () => {
+    setModalVisible(false);
+    navigation.setParams({ registerMessage: undefined } as any);
+  };
 
   return (
     <View style={styles.container}>
@@ -55,19 +84,23 @@ const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
       >
         <View style={styles.content}>
           <View style={styles.logoContainer}>
-            <Animated.View style={{ transform: [{ translateY: logoSlideAnim }]}}>
+            <Animated.View
+              style={{ transform: [{ translateY: logoSlideAnim }] }}
+            >
               <Image source={img} style={{ width: 220, height: 220 }} />
             </Animated.View>
             <Animated.Text
               style={[
                 styles.title,
-                { transform: [{ translateY: titleSlideAnim }]},
+                { transform: [{ translateY: titleSlideAnim }] },
               ]}
             >
               FPT University Events
             </Animated.Text>
           </View>
-          <Animated.View style={[styles.buttonContainer, { opacity: buttonFadeAnim }]}>
+          <Animated.View
+            style={[styles.buttonContainer, { opacity: buttonFadeAnim }]}
+          >
             <TouchableOpacity
               style={styles.loginButton}
               onPress={() => navigation.navigate("Login")}
@@ -82,6 +115,40 @@ const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
               <Text style={styles.registerButtonText}>Đăng ký</Text>
             </TouchableOpacity>
           </Animated.View>
+
+          {registerMessage && (
+            <Modal
+              visible={modalVisible}
+              transparent
+              animationType="fade"
+              onRequestClose={closeModal}
+            >
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalCard}>
+                  <View style={styles.modalIcon}>
+                    <Text style={styles.modalIconText}>✅</Text>
+                  </View>
+                  <Text style={styles.modalTitle}>Đăng ký thành công</Text>
+                  <Text style={styles.modalMessage}>{registerMessage}</Text>
+                  <TouchableOpacity
+                    style={styles.modalButtonPrimary}
+                    onPress={() => {
+                      closeModal();
+                      navigation.navigate("Login");
+                    }}
+                  >
+                    <Text style={styles.modalButtonPrimaryText}>Đăng nhập</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.modalButtonGhost}
+                    onPress={closeModal}
+                  >
+                    <Text style={styles.modalButtonGhostText}>Đóng</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
+          )}
         </View>
       </LinearGradient>
     </View>
@@ -146,6 +213,76 @@ const styles = StyleSheet.create({
   registerButtonText: {
     color: COLORS.primary,
     fontSize: FONTS.bodyLarge,
+    fontWeight: "600",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: SPACING.screenPadding,
+  },
+  modalCard: {
+    width: "100%",
+    backgroundColor: COLORS.white,
+    borderRadius: RADII.modal,
+    padding: SPACING.xl,
+    alignItems: "center",
+    ...SHADOWS.md,
+  },
+  modalIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#E8F3FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: SPACING.md,
+  },
+  modalIconText: {
+    fontSize: 28,
+  },
+  modalTitle: {
+    fontSize: FONTS.bodyLarge ?? FONTS.body,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: SPACING.sm,
+    textAlign: "center",
+  },
+  modalMessage: {
+    fontSize: FONTS.body,
+    color: COLORS.text,
+    opacity: 0.8,
+    textAlign: "center",
+    marginBottom: SPACING.lg,
+  },
+  modalButtonPrimary: {
+    width: "100%",
+    height: SIZES.button.height,
+    borderRadius: RADII.button,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: COLORS.primary,
+    marginBottom: SPACING.sm,
+  },
+  modalButtonPrimaryText: {
+    color: COLORS.white,
+    fontSize: FONTS.body,
+    fontWeight: "600",
+  },
+  modalButtonGhost: {
+    width: "100%",
+    height: SIZES.button.height,
+    borderRadius: RADII.button,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    backgroundColor: "transparent",
+  },
+  modalButtonGhostText: {
+    color: COLORS.primary,
+    fontSize: FONTS.body,
     fontWeight: "600",
   },
 });

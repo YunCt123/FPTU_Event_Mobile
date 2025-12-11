@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+  Alert,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,53 +17,109 @@ import {
   FONTS,
   RADII,
   SHADOWS,
-  SIZES,
 } from "../../utils/theme";
 import { LinearGradient } from "expo-linear-gradient";
+import { ticketService } from "../../services/ticketService";
+import { Ticket, TicketStatus } from "../../types/ticket";
 
 type TicketScreenProps = {
   navigation: NativeStackNavigationProp<any>;
 };
 
-const MOCK_TICKETS = [
-  {
-    id: "1",
-    title: "Tech Talk: AI in Education",
-    date: "15/12/2025",
-    time: "14:00",
-    location: "Hall A",
-    status: "upcoming",
-    icon: "mic",
-    ticketCode: "TECH2025001",
-  },
-  {
-    id: "2",
-    title: "Workshop: UI/UX Design",
-    date: "18/12/2025",
-    time: "09:00",
-    location: "Room 301",
-    status: "upcoming",
-    icon: "color-palette",
-    ticketCode: "DESIGN2025002",
-  },
-  {
-    id: "3",
-    title: "Music Festival 2024",
-    date: "10/11/2024",
-    time: "18:00",
-    location: "Main Stage",
-    status: "used",
-    icon: "musical-notes",
-    ticketCode: "MUSIC2024003",
-  },
-];
+const STATUS_LABELS: Record<TicketStatus, string> = {
+  VALID: "Có hiệu lực",
+  USED: "Đã sử dụng",
+  CANCELLED: "Đã hủy",
+  EXPIRED: "Hết hạn",
+};
+
+const STATUS_COLORS: Record<TicketStatus, string> = {
+  VALID: "#4CAF50",
+  USED: "#9E9E9E",
+  CANCELLED: "#F44336",
+  EXPIRED: "#FF9800",
+};
 
 const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
-  const [activeTab, setActiveTab] = useState<"upcoming" | "used">("upcoming");
+  const [activeTab, setActiveTab] = useState<"valid" | "used">("valid");
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const filteredTickets = MOCK_TICKETS.filter(
-    (ticket) => ticket.status === activeTab
-  );
+  const fetchTickets = useCallback(async (pageNum: number = 1, isRefresh: boolean = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
+      const response = await ticketService.getMyTickets({
+        page: pageNum,
+        limit: 10,
+      });
+
+      setTickets(response.data || []);
+      setTotalPages(response.meta?.totalPages || 1);
+      setPage(pageNum);
+    } catch (error) {
+      console.error("Failed to fetch tickets", error);
+      Alert.alert("Lỗi", "Không thể tải danh sách vé");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTickets(1);
+  }, []);
+
+  const onRefresh = () => {
+    fetchTickets(1, true);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getTicketIcon = (status: TicketStatus) => {
+    switch (status) {
+      case "VALID":
+        return "ticket";
+      case "USED":
+        return "checkmark-circle";
+      case "CANCELLED":
+        return "close-circle";
+      case "EXPIRED":
+        return "time";
+      default:
+        return "ticket-outline";
+    }
+  };
+
+  const filteredTickets = tickets.filter((ticket) => {
+    if (activeTab === "valid") {
+      return ticket.status === "VALID";
+    } else {
+      return ticket.status === "USED" || ticket.status === "CANCELLED" || ticket.status === "EXPIRED";
+    }
+  });
 
   return (
     <View style={styles.container}>
@@ -70,10 +129,19 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
         end={{ x: 0.2, y: 1 }}
         style={styles.gradientBackground}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+        {loading && !refreshing ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+            <Text style={styles.loadingText}>Đang tải vé...</Text>
+          </View>
+        ) : (
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          >
           <View style={styles.header}>
             <Text style={styles.title}>Vé của tôi</Text>
 
@@ -82,17 +150,17 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
               <TouchableOpacity
                 style={[
                   styles.tab,
-                  activeTab === "upcoming" && styles.tabActive,
+                  activeTab === "valid" && styles.tabActive,
                 ]}
-                onPress={() => setActiveTab("upcoming")}
+                onPress={() => setActiveTab("valid")}
               >
                 <Text
                   style={[
                     styles.tabText,
-                    activeTab === "upcoming" && styles.tabTextActive,
+                    activeTab === "valid" && styles.tabTextActive,
                   ]}
                 >
-                  Sắp diễn ra
+                  Có hiệu lực
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -119,14 +187,14 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
                 style={{ opacity: 0.3, marginBottom: SPACING.lg }}
               />
               <Text style={styles.emptyText}>
-                {activeTab === "upcoming"
+                {activeTab === "valid"
                   ? "Bạn chưa có vé nào"
-                  : "Chưa có vé đã sử dụng"}
+                  : "Chưa có vé đã qua"}
               </Text>
-              {activeTab === "upcoming" && (
+              {activeTab === "valid" && (
                 <TouchableOpacity
                   style={styles.browseButton}
-                  onPress={() => navigation.navigate("EventTab")}
+                  onPress={() => navigation.navigate("Event")}
                 >
                   <Text style={styles.browseButtonText}>Khám phá sự kiện</Text>
                 </TouchableOpacity>
@@ -135,11 +203,18 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
           ) : (
             <View style={styles.ticketsContainer}>
               {filteredTickets.map((ticket) => (
-                <View key={ticket.id} style={styles.ticketCard}>
+                <TouchableOpacity 
+                  key={ticket.id} 
+                  style={styles.ticketCard}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    navigation.navigate("TicketDetails", { ticketId: ticket.id });
+                  }}
+                >
                   <View style={styles.ticketHeader}>
                     <View style={styles.ticketIconContainer}>
                       <Ionicons
-                        name={ticket.icon as any}
+                        name={getTicketIcon(ticket.status)}
                         size={24}
                         color={COLORS.primary}
                       />
@@ -147,18 +222,18 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
                     <View
                       style={[
                         styles.statusBadge,
-                        ticket.status === "used" && styles.statusBadgeUsed,
+                        { backgroundColor: STATUS_COLORS[ticket.status] },
                       ]}
                     >
                       <Text style={styles.statusText}>
-                        {ticket.status === "upcoming"
-                          ? "Sắp diễn ra"
-                          : "Đã sử dụng"}
+                        {STATUS_LABELS[ticket.status]}
                       </Text>
                     </View>
                   </View>
 
-                  <Text style={styles.ticketTitle}>{ticket.title}</Text>
+                   <Text style={styles.ticketTitle} numberOfLines={2}>
+                    Tên sự kiện: {ticket.event.title}
+                  </Text>
 
                   <View style={styles.ticketDetails}>
                     <View style={styles.ticketDetail}>
@@ -168,46 +243,63 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
                         color={COLORS.text}
                         style={{ opacity: 0.7 }}
                       />
-                      <Text style={styles.detailText}>{ticket.date}</Text>
+                      <Text style={styles.detailText}>
+                        {formatDate(ticket.bookingDate)}
+                      </Text>
                     </View>
+                    {ticket.checkinTime && (
+                      <View style={styles.ticketDetail}>
+                        <Ionicons
+                          name="checkmark-circle-outline"
+                          size={14}
+                          color={COLORS.text}
+                          style={{ opacity: 0.7 }}
+                        />
+                        <Text style={styles.detailText}>
+                          {formatTime(ticket.checkinTime)}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {ticket.user && (
                     <View style={styles.ticketDetail}>
                       <Ionicons
-                        name="time-outline"
+                        name="person-outline"
                         size={14}
                         color={COLORS.text}
                         style={{ opacity: 0.7 }}
                       />
-                      <Text style={styles.detailText}>{ticket.time}</Text>
+                      <Text style={styles.detailText}>
+                        {ticket.user.firstName} {ticket.user.lastName}
+                      </Text>
                     </View>
-                  </View>
-
-                  <View style={styles.ticketDetail}>
-                    <Ionicons
-                      name="location-outline"
-                      size={14}
-                      color={COLORS.text}
-                      style={{ opacity: 0.7 }}
-                    />
-                    <Text style={styles.detailText}>{ticket.location}</Text>
-                  </View>
+                  )}
 
                   <View style={styles.divider} />
 
                   <View style={styles.ticketCodeContainer}>
-                    <Text style={styles.ticketCodeLabel}>Mã vé</Text>
-                    <Text style={styles.ticketCode}>{ticket.ticketCode}</Text>
+                    <Text style={styles.ticketCodeLabel}>Mã QR</Text>
+                    <Text style={styles.ticketCode} numberOfLines={1}>
+                      {ticket.qrCode}
+                    </Text>
                   </View>
 
-                  {ticket.status === "upcoming" && (
-                    <TouchableOpacity style={styles.viewButton}>
-                      <Text style={styles.viewButtonText}>Xem chi tiết</Text>
+                  {ticket.status === "VALID" && (
+                    <TouchableOpacity 
+                      style={styles.viewButton}
+                      onPress={() => navigation.navigate("TicketQRCode", { ticketId: ticket.id })}
+                    >
+                      <Text style={styles.viewButtonText}>Xem QR Code</Text>
+                      <Ionicons name="qr-code" size={16} color={COLORS.white} />
                     </TouchableOpacity>
                   )}
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
           )}
         </ScrollView>
+        )}
       </LinearGradient>
     </View>
   );
@@ -220,6 +312,16 @@ const styles = StyleSheet.create({
   },
   gradientBackground: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: SPACING.md,
+    fontSize: FONTS.md,
+    color: COLORS.text,
   },
   header: {
     paddingHorizontal: SPACING.screenPadding,
@@ -307,13 +409,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   statusBadge: {
-    backgroundColor: COLORS.success,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.xs,
     borderRadius: RADII.pill,
-  },
-  statusBadgeUsed: {
-    backgroundColor: "#9E9E9E",
   },
   statusText: {
     fontSize: FONTS.caption,
@@ -369,7 +467,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     paddingVertical: SPACING.md,
     borderRadius: RADII.button,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: SPACING.xs,
   },
   viewButtonText: {
     color: COLORS.white,

@@ -20,6 +20,9 @@ import {
   SHADOWS,
 } from "../../utils/theme";
 import { Ionicons } from "@expo/vector-icons";
+import { authService } from "../../services/authService";
+import { LoginRequest } from "../../types/auth";
+import { GradientButton } from "../../components";
 
 type LoginScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -28,10 +31,39 @@ type LoginScreenProps = {
 const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = () => {
-    // TODO: Implement login logic
-    console.log("Login:", { email, password });
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setError("Vui lòng nhập đầy đủ email và mật khẩu");
+      return;
+    }
+
+    try {
+      setError(null);
+      setLoading(true);
+
+      const payload: LoginRequest = { email, password };
+      const res = await authService.login(payload);
+
+      console.log("Login success:", res);
+      // Điều hướng sang app chính sau khi login thành công (RootStack -> Main)
+      // LoginScreen nằm trong AuthNavigator, còn AuthNavigator là một screen của RootNavigator (Auth).
+      // Vì vậy chỉ cần lấy parent 1 lần là tới RootStack.
+      const rootNavigation = navigation.getParent();
+      rootNavigation?.reset({
+        index: 0,
+        routes: [{ name: "Main" as never }],
+      });
+    } catch (e: any) {
+      console.log("Login error:", e?.response ?? e);
+      const message =
+        e?.response?.data?.message || "Đăng nhập thất bại. Vui lòng thử lại.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -73,6 +105,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 />
               </View>
 
+              {error && <Text style={styles.errorText}>{error}</Text>}
+
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Mật khẩu</Text>
                 <TextInput
@@ -89,12 +123,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.loginButton}
+              <GradientButton
+                title={loading ? "Đang đăng nhập..." : "Đăng nhập"}
                 onPress={handleLogin}
-              >
-                <Text style={styles.loginButtonText}>Đăng nhập</Text>
-              </TouchableOpacity>
+                loading={loading}
+                disabled={loading}
+              />
 
               <View style={styles.footer}>
                 <Text style={styles.footerText}>Chưa có tài khoản? </Text>
@@ -194,6 +228,11 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: FONTS.bodyLarge,
     fontWeight: "600",
+  },
+  errorText: {
+    color: "red",
+    marginTop: SPACING.sm,
+    fontSize: FONTS.body,
   },
   footer: {
     flexDirection: "row",

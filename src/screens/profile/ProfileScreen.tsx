@@ -1,22 +1,22 @@
-import React from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
+  Image,
+  Alert,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  COLORS,
-  SPACING,
-  FONTS,
-  RADII,
-  SHADOWS,
-  SIZES,
-} from "../../utils/theme";
+import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { authService } from "../../services/authService";
+import { STORAGE_KEYS } from "../../api/api";
+import { User } from "../../types/user";
 
 type ProfileScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -34,12 +34,6 @@ const MENU_ITEMS = [
     icon: "ticket",
     title: "Lịch sử đăng ký",
     subtitle: "Xem các sự kiện đã tham gia",
-  },
-  {
-    id: "3",
-    icon: "heart",
-    title: "Sự kiện yêu thích",
-    subtitle: "Danh sách sự kiện đã lưu",
   },
   {
     id: "4",
@@ -62,10 +56,159 @@ const MENU_ITEMS = [
 ];
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
-  const handleLogout = () => {
-    // TODO: Implement logout logic
-    console.log("Logout");
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadProfile = async () => {
+    try {
+      setError(null);
+      setLoading(true);
+
+      const token = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+      if (!token) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "Auth" as never }],
+        });
+        return;
+      }
+
+      const data = await authService.getCurrentUser();
+      setUser(data);
+    } catch (e: any) {
+      console.log("Load profile error:", e?.response ?? e);
+      const status = e?.response?.status;
+
+      if (status === 401) {
+        await AsyncStorage.multiRemove([
+          STORAGE_KEYS.ACCESS_TOKEN,
+          STORAGE_KEYS.REFRESH_TOKEN,
+          STORAGE_KEYS.USER,
+        ]);
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Auth" as never }],
+          });
+        return;
+      }
+
+      setError("Không thể tải thông tin tài khoản. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const handleLogout = async () => {
+    Alert.alert(
+      "Xác nhận đăng xuất",
+      "Bạn có chắc chắn muốn đăng xuất không?",
+      [
+        {
+          text: "Hủy",
+          style: "cancel",
+        },
+        {
+          text: "Đăng xuất",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await AsyncStorage.multiRemove([
+                STORAGE_KEYS.ACCESS_TOKEN,
+                STORAGE_KEYS.REFRESH_TOKEN,
+                STORAGE_KEYS.USER,
+              ]);
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "Auth" as never }],
+              });
+            } catch (error) {
+              console.error("Logout error:", error);
+              Alert.alert("Lỗi", "Đăng xuất thất bại. Vui lòng thử lại.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const renderMenuItems = () => {
+    const isStaff = user?.roleName?.toLowerCase() === "staff";
+    const items = [
+      ...MENU_ITEMS,
+      ...(isStaff
+        ? [
+            {
+              id: "staff-events",
+              icon: "calendar",
+              title: "Sự kiện được phân công",
+              subtitle: "Xem sự kiện bạn được giao",
+            },
+            {
+              id: "incident-history",
+              icon: "warning",
+              title: "Lịch sử báo cáo sự cố",
+              subtitle: "Xem các báo cáo đã gửi",
+            },
+          ]
+        : []),
+    ];
+
+    return (
+      <View style={styles.menuContainer}>
+        {items.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            style={styles.menuItem}
+            activeOpacity={0.7}
+            onPress={() => {
+              if (item.id === "1") {
+                navigation.navigate("PersonalInfo");
+              } else if (item.id === "2") {
+                navigation.navigate("TicketHistory");
+              } else if (item.id === "staff-events") {
+                navigation.navigate("StaffAssignedEvents");
+              } else if (item.id === "incident-history") {
+                navigation.navigate("IncidentHistory");
+              }
+            }}
+          >
+            <View style={styles.menuIconContainer}>
+              <Ionicons
+                name={item.icon as any}
+                size={20}
+                color={COLORS.primary}
+              />
+            </View>
+            <View style={styles.menuContent}>
+              <Text style={styles.menuTitle}>{item.title}</Text>
+              <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
+            </View>
+            <Text style={styles.menuArrow}>›</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
+
+  const renderStats = () => (
+    <View style={styles.statsContainer}>
+      <View style={styles.statItem}>
+        <Text style={styles.statNumber}>12</Text>
+        <Text style={styles.statLabel}>Sự kiện</Text>
+      </View>
+      <View style={styles.statDivider} />
+      <View style={styles.statItem}>
+        <Text style={styles.statNumber}>5</Text>
+        <Text style={styles.statLabel}>Sắp tới</Text>
+      </View>
+      <View style={styles.statDivider} />
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -75,69 +218,57 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         end={{ x: 0.2, y: 1 }}
         style={styles.gradientBackground}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Profile Header */}
-          <View style={styles.profileHeader}>
-            <View style={styles.avatarContainer}>
-              <Text style={styles.avatarText}>👤</Text>
-            </View>
-            <Text style={styles.userName}>Nguyễn Văn A</Text>
-            <Text style={styles.userEmail}>nguyenvana@fpt.edu.vn</Text>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
           </View>
-
-          {/* Stats */}
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>12</Text>
-              <Text style={styles.statLabel}>Sự kiện</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>5</Text>
-              <Text style={styles.statLabel}>Sắp tới</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>8</Text>
-              <Text style={styles.statLabel}>Yêu thích</Text>
-            </View>
-          </View>
-
-          {/* Menu Items */}
-          <View style={styles.menuContainer}>
-            {MENU_ITEMS.map((item) => (
+        ) : (
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.profileHeader}>
               <TouchableOpacity
-                key={item.id}
-                style={styles.menuItem}
-                activeOpacity={0.7}
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
               >
-                <View style={styles.menuIconContainer}>
-                  <Ionicons
-                    name={item.icon as any}
-                    size={20}
-                    color={COLORS.primary}
-                  />
-                </View>
-                <View style={styles.menuContent}>
-                  <Text style={styles.menuTitle}>{item.title}</Text>
-                  <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
-                </View>
-                <Text style={styles.menuArrow}>›</Text>
+                <Ionicons name="arrow-back" size={24} color={COLORS.text} />
               </TouchableOpacity>
-            ))}
-          </View>
+              <View style={styles.avatarContainer}>
+                {user?.avatar ? (
+                  <Image
+                    source={{ uri: user.avatar }}
+                    style={styles.avatarImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Ionicons name="person" size={48} color={COLORS.text} />
+                )}
+              </View>
+              <Text style={styles.userName}>
+                {user ? `${user.firstName} ${user.lastName}` : "Người dùng"}
+              </Text>
+              <Text style={styles.userEmail}>{user?.email}</Text>
+              {user?.campus && (
+                <Text style={styles.userCampus}>{user.campus.name}</Text>
+              )}
+            </View>
 
-          {/* Logout Button */}
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutButtonText}>Đăng xuất</Text>
-          </TouchableOpacity>
+            {error && <Text style={styles.errorText}>{error}</Text>}
 
-          {/* App Version */}
-          <Text style={styles.versionText}>Phiên bản 1.0.0</Text>
-        </ScrollView>
+            {renderStats()}
+            {renderMenuItems()}
+
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+            >
+              <Text style={styles.logoutButtonText}>Đăng xuất</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.versionText}>Phiên bản 1.0.0</Text>
+          </ScrollView>
+        )}
       </LinearGradient>
     </View>
   );
@@ -156,22 +287,36 @@ const styles = StyleSheet.create({
     marginTop: SPACING.huge,
     paddingHorizontal: SPACING.screenPadding,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   profileHeader: {
     paddingVertical: SPACING.xxxl,
     alignItems: "center",
     marginBottom: SPACING.lg,
   },
+  backButton: {
+    position: "absolute",
+    top: SPACING.xxxl,
+    left: SPACING.screenPadding,
+    zIndex: 10,
+  },
   avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.primary,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: COLORS.white,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: SPACING.md,
+    ...SHADOWS.md,
   },
-  avatarText: {
-    fontSize: 40,
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 48,
   },
   userName: {
     fontSize: FONTS.title,
@@ -183,6 +328,12 @@ const styles = StyleSheet.create({
     fontSize: FONTS.body,
     color: COLORS.text,
     opacity: 0.6,
+  },
+  userCampus: {
+    fontSize: FONTS.caption,
+    color: COLORS.text,
+    opacity: 0.7,
+    marginTop: SPACING.xs,
   },
   statsContainer: {
     backgroundColor: COLORS.white,
@@ -270,6 +421,12 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     opacity: 0.4,
     textAlign: "center",
+  },
+  errorText: {
+    color: "red",
+    marginBottom: SPACING.md,
+    textAlign: "center",
+    fontSize: FONTS.body,
   },
 });
 
