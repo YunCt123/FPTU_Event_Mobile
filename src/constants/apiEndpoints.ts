@@ -29,6 +29,10 @@ export const EVENT_ENDPOINTS = {
 
 export const TICKET_ENDPOINTS = {
   REGISTER: "/tickets",
+  LIST: "/tickets/me",
+  CREATE: "/tickets",
+  BY_ID: (id: string) => `/tickets/${id}`,
+  BY_QR: (qrCode: string) => `/tickets/qr/${qrCode}`,
 };
 
 export const SEAT_ENDPOINTS = {
@@ -37,4 +41,12 @@ export const SEAT_ENDPOINTS = {
   CREATE: "/tickets",
   BY_ID: (id: string) => `/tickets/${id}`,
   BY_QR: (qrCode: string) => `/tickets/qr/${qrCode}`,
+};
+
+export const STAFF_ENDPOINTS = {
+  ASSIGNED_EVENTS: "/events/assigned",
+  CHECK_IN: (eventId: string) => `/events/${eventId}/check-in`,
+  MANUAL_CHECK_IN: (eventId: string) => `/events/${eventId}/manual-check-in`,
+  VALIDATE_TICKET: (eventId: string) => `/events/${eventId}/validate-ticket`,
+  INCIDENT_REPORT: (eventId: string) => `/events/${eventId}/incident`,
 };

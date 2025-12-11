@@ -26,6 +26,13 @@ export type RootStackParamList = {
     Profile: undefined;
     EditProfile: undefined;
     PersonalInfo: undefined;
+
+    // Staff Screens
+    StaffAssignedEvents: undefined;
+    StaffEventDetail: { eventId: string };
+    ScanQRCode: { eventId: string; eventTitle?: string; eventBanner?: string };
+    ManualCheckIn: { eventId: string; eventTitle?: string; eventBanner?: string };
+    IncidentReport: { eventId: string; eventTitle?: string };
 };
 
 export type AuthStackParamList = {
