@@ -21,6 +21,7 @@ export type RootStackParamList = {
     // Ticket Screens
     TicketDetails: { ticketId: string };
     TicketQRCode: { ticketId: string };
+    TicketHistory: undefined;
 
     // Profile Screens
     Profile: undefined;
@@ -30,12 +31,9 @@ export type RootStackParamList = {
     // Staff Screens
     StaffAssignedEvents: undefined;
     StaffEventDetail: { eventId: string };
-    ScanQRCode: { eventId: string; eventTitle?: string; eventBanner?: string };
-    ManualCheckIn: { eventId: string; eventTitle?: string; eventBanner?: string };
     IncidentReport: { eventId: string; eventTitle?: string };
-
-    // Staff
-    StaffScan: undefined;
+    IncidentHistory: undefined;
+    StaffScan: { eventId: string; eventTitle?: string };
 };
 
 export type AuthStackParamList = {

@@ -173,7 +173,7 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
                     activeTab === "used" && styles.tabTextActive,
                   ]}
                 >
-                  Đã qua
+                  Đã sử dụng
                 </Text>
               </TouchableOpacity>
             </View>

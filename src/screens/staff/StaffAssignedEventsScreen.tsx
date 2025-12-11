@@ -218,9 +218,6 @@ export default function StaffAssignedEventsScreen({
                           />
                           <Text style={styles.roleText}>Check-in Staff</Text>
                         </View>
-                        <Text style={styles.assignedDate}>
-                          Phân công: {formatDate(event.assignedAt)}
-                        </Text>
                       </View>
                     </View>
 
@@ -228,10 +225,9 @@ export default function StaffAssignedEventsScreen({
                       <TouchableOpacity
                         style={styles.actionButton}
                         onPress={() =>
-                          navigation.navigate("ManualCheckIn", {
+                          navigation.navigate("StaffScan", {
                             eventId: event.id,
                             eventTitle: event.title,
-                            eventBanner: event.bannerUrl,
                           })
                         }
                       >
@@ -302,6 +298,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: SPACING.lg,
     marginTop: SPACING.xl,
+    marginBottom: SPACING.md,
   },
   backButton: {
     width: 40,
@@ -335,7 +332,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   eventsContainer: {
-    padding: SPACING.lg,
+    padding: SPACING.xl,
   },
   eventCard: {
     backgroundColor: COLORS.white,
@@ -407,10 +404,6 @@ const styles = StyleSheet.create({
     fontSize: FONTS.xs,
     fontWeight: "600",
     color: COLORS.primary,
-  },
-  assignedDate: {
-    fontSize: FONTS.xs,
-    color: COLORS.text,
   },
   cardFooter: {
     flexDirection: "row",

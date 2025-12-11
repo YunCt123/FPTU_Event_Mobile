@@ -10,10 +10,10 @@ import PersonalInfoScreen from "../screens/profile/PersonalInfoScreen";
 import EventDetailScreen from "../screens/event/EventDetailScreen";
 import TicketDetailScreen from "../screens/ticket/TicketDetailScreen";
 import TicketQRCodeScreen from "../screens/ticket/TicketQRCodeScreen";
+import TicketHistoryScreen from "../screens/ticket/TicketHistoryScreen";
 import StaffAssignedEventsScreen from "../screens/staff/StaffAssignedEventsScreen";
-import ScanQRCodeScreen from "../screens/staff/ScanQRCodeScreen";
-import ManualCheckInScreen from "../screens/staff/ManualCheckInScreen";
 import IncidentReportScreen from "../screens/staff/IncidentReportScreen";
+import IncidentHistoryScreen from "../screens/staff/IncidentHistoryScreen";
 import { RootStackParamList } from "../types/navigation";
 import TicketScanScreen from "../screens/staff/TicketScanScreen";
 
@@ -59,12 +59,12 @@ const RootNavigator: React.FC = () => {
         <Stack.Screen name="EventDetails" component={EventDetailScreen} />
         <Stack.Screen name="TicketDetails" component={TicketDetailScreen} />
         <Stack.Screen name="TicketQRCode" component={TicketQRCodeScreen} />
+        <Stack.Screen name="TicketHistory" component={TicketHistoryScreen} />
         
         {/* Staff Screens */}
         <Stack.Screen name="StaffAssignedEvents" component={StaffAssignedEventsScreen} />
-        <Stack.Screen name="ScanQRCode" component={ScanQRCodeScreen} />
-        <Stack.Screen name="ManualCheckIn" component={ManualCheckInScreen} />
         <Stack.Screen name="IncidentReport" component={IncidentReportScreen} />
+        <Stack.Screen name="IncidentHistory" component={IncidentHistoryScreen} />
         <Stack.Screen name="StaffScan" component={TicketScanScreen} />
       </Stack.Navigator>
     </NavigationContainer>

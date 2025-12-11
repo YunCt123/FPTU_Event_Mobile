@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RouteProp } from "@react-navigation/native";
@@ -53,6 +54,9 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
     try {
       setLoading(true);
       const response = await ticketService.getTicketById(ticketId);
+      console.log("Ticket detail response:", JSON.stringify(response, null, 2));
+      console.log("Seat data:", response.seat);
+      console.log("SeatId:", response.seatId);
       setTicket(response);
     } catch (error) {
       console.error("Failed to fetch ticket detail", error);
@@ -136,25 +140,36 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
 
           {/* Ticket Card */}
           <View style={styles.ticketCard}>
-            {/* Status Badge */}
-            <View
-              style={[
-                styles.statusBadge,
-                { backgroundColor: STATUS_COLORS[ticket.status] },
-              ]}
-            >
-              <Text style={styles.statusText}>{STATUS_LABELS[ticket.status]}</Text>
-            </View>
-
-            {/* Event Title */}
-            {ticket.event && (
-              <Text style={styles.eventTitle}>{ticket.event.title}</Text>
+            {/* Event Banner */}
+            {ticket.event?.bannerUrl && (
+              <Image
+                source={{ uri: ticket.event.bannerUrl }}
+                style={styles.eventBanner}
+                resizeMode="cover"
+              />
             )}
 
-            {/* Ticket ID */}
-            <View style={styles.ticketIdContainer}>
-              <Ionicons name="ticket" size={20} color={COLORS.primary} />
-              <Text style={styles.ticketId}>Vé #{ticket.id.slice(0, 8)}</Text>
+            <View style={styles.ticketCardContent}>
+              {/* Status Badge */}
+              <View
+                style={[
+                  styles.statusBadge,
+                  { backgroundColor: STATUS_COLORS[ticket.status] },
+                ]}
+              >
+                <Text style={styles.statusText}>{STATUS_LABELS[ticket.status]}</Text>
+              </View>
+
+              {/* Event Title */}
+              {ticket.event && (
+                <Text style={styles.eventTitle}>{ticket.event.title}</Text>
+              )}
+
+              {/* Ticket ID */}
+              <View style={styles.ticketIdContainer}>
+                <Ionicons name="ticket" size={20} color={COLORS.primary} />
+                <Text style={styles.ticketId}>Vé #{ticket.id.slice(0, 8)}</Text>
+              </View>
             </View>
           </View>
 
@@ -163,6 +178,20 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
             <View style={styles.infoCard}>
               <Text style={styles.cardTitle}>Thông tin sự kiện</Text>
 
+              {ticket.event.venue && (
+                <View style={styles.infoRow}>
+                  <Ionicons name="location-outline" size={20} color={COLORS.primary} />
+                  <View style={styles.infoContent}>
+                    <Text style={styles.infoLabel}>Địa điểm</Text>
+                    <Text style={styles.infoValue}>{ticket.event.venue.name}</Text>
+                    {ticket.event.venue.location && (
+                      <Text style={styles.infoSubValue}>{ticket.event.venue.location}</Text>
+                    )}
+                  </View>
+                </View>
+              )}
+
+              {ticket.event.venue && <View style={styles.divider} />}
               <View style={styles.infoRow}>
                 <Ionicons name="time-outline" size={20} color={COLORS.primary} />
                 <View style={styles.infoContent}>
@@ -216,16 +245,22 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
               </>
             )}
 
-            {ticket.seatId && (
+            {(ticket.seat || ticket.seatId) && (
               <>
                 <View style={styles.divider} />
                 <View style={styles.infoRow}>
                   <Ionicons name="business-outline" size={20} color={COLORS.primary} />
                   <View style={styles.infoContent}>
                     <Text style={styles.infoLabel}>Chỗ ngồi</Text>
-                    <Text style={styles.infoValue}>
-                      Hàng {ticket.seatId.rowLabel}, Ghế {ticket.seatId.colLabel}
-                    </Text>
+                    {ticket.seat ? (
+                      <Text style={styles.infoValue}>
+                        Hàng {ticket.seat.rowLabel}, Ghế {ticket.seat.colLabel}
+                      </Text>
+                    ) : (
+                      <Text style={styles.infoValue}>
+                        Seat ID: {ticket.seatId}
+                      </Text>
+                    )}
                   </View>
                 </View>
               </>
@@ -337,10 +372,17 @@ const styles = StyleSheet.create({
   ticketCard: {
     backgroundColor: COLORS.white,
     borderRadius: RADII.lg,
-    padding: SPACING.lg,
+    overflow: "hidden",
     marginHorizontal: SPACING.md,
     marginBottom: SPACING.md,
     ...SHADOWS.md,
+  },
+  eventBanner: {
+    width: "100%",
+    height: 180,
+  },
+  ticketCardContent: {
+    padding: SPACING.lg,
   },
   statusBadge: {
     alignSelf: "flex-start",
@@ -406,6 +448,13 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontWeight: "600",
     lineHeight: 22,
+  },
+  infoSubValue: {
+    fontSize: FONTS.sm,
+    color: COLORS.textSecondary,
+    fontWeight: "400",
+    lineHeight: 20,
+    marginTop: 2,
   },
   divider: {
     height: 1,

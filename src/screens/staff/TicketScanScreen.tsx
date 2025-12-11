@@ -23,11 +23,21 @@ import { COLORS, FONTS, RADII, SHADOWS, SPACING } from "../../utils/theme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { STORAGE_KEYS } from "../../api/api";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RouteProp } from "@react-navigation/native";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const SCANNER_SIZE = SCREEN_WIDTH * 0.7;
 
-const TicketScanScreen = () => {
+type TicketScanScreenProps = {
+  navigation?: NativeStackNavigationProp<any>;
+  route?: RouteProp<
+    { params?: { eventId?: string; eventTitle?: string } },
+    "params"
+  >;
+};
+
+const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -213,10 +223,19 @@ const TicketScanScreen = () => {
       <View style={styles.overlay}>
         {/* Header */}
         <SafeAreaView edges={["top"]} style={styles.header}>
-          <Text style={styles.headerTitle}>Quét vé</Text>
-          <Text style={styles.headerSubtitle}>
-            Đưa mã QR vào khung để check-in
-          </Text>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+          </TouchableOpacity>
+          <View>
+            <Text style={styles.headerTitle}>Quét vé</Text>
+            <Text style={styles.headerSubtitle}>
+              Đưa mã QR vào khung để check-in
+            </Text>
+          </View>
+          <View></View>
         </SafeAreaView>
 
         {/* Scanner frame */}
@@ -513,6 +532,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.md,
     paddingBottom: SPACING.lg,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    position: "absolute",
+    left: SPACING.xl,
+    top: 64,
+    zIndex: 10,
   },
   headerTitle: {
     color: COLORS.white,

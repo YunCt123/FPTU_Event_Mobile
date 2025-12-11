@@ -16,8 +16,10 @@ import { RouteProp } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
-import { staffService } from "../../services/staffService";
-import { IncidentType } from "../../types/staff";
+import { incidentService } from "../../services/incidentService";
+import { IncidentSeverity } from "../../types/incident";
+
+type IncidentType = string;
 
 type IncidentReportScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -69,7 +71,7 @@ const INCIDENT_TYPES: {
 ];
 
 const SEVERITY_LEVELS: {
-  value: "LOW" | "MEDIUM" | "HIGH";
+  value: IncidentSeverity;
   label: string;
   color: string;
 }[] = [
@@ -84,7 +86,7 @@ export default function IncidentReportScreen({
 }: IncidentReportScreenProps) {
   const { eventId, eventTitle } = route.params;
   const [incidentType, setIncidentType] = useState<IncidentType | null>(null);
-  const [severity, setSeverity] = useState<"LOW" | "MEDIUM" | "HIGH">("MEDIUM");
+  const [severity, setSeverity] = useState<IncidentSeverity>("MEDIUM");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -112,8 +114,9 @@ export default function IncidentReportScreen({
           onPress: async () => {
             setLoading(true);
             try {
-              await staffService.submitIncidentReport(eventId, {
-                incidentType,
+              await incidentService.createIncident({
+                eventId,
+                title: incidentType,
                 description: description.trim(),
                 severity,
               });
@@ -164,12 +167,12 @@ export default function IncidentReportScreen({
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Báo cáo sự cố</Text>
           <View style={styles.placeholder} />
         </View>
-      </LinearGradient>
+      
 
       <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.section}>
@@ -303,6 +306,7 @@ export default function IncidentReportScreen({
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </LinearGradient>
     </KeyboardAvoidingView>
   );
 }
@@ -310,25 +314,32 @@ export default function IncidentReportScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   header: {
+    flex: 1,
     paddingTop: SPACING.xl + 20,
-    paddingBottom: SPACING.lg,
-    paddingHorizontal: SPACING.lg,
   },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingHorizontal: SPACING.lg,
+    marginTop: SPACING.md,
+    marginBottom: SPACING.md,
   },
   backButton: {
-    padding: SPACING.sm,
+    width: 40,
+    height: 40,
+    borderRadius: RADII.xl,
+    backgroundColor: COLORS.white,
+    justifyContent: "center",
+    alignItems: "center",
+    ...SHADOWS.md,
   },
   headerTitle: {
     fontSize: FONTS.xl,
     fontWeight: "bold",
-    color: COLORS.white,
+    color: COLORS.text,
     flex: 1,
     textAlign: "center",
   },

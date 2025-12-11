@@ -36,34 +36,8 @@ export interface ValidateTicketResponse {
   };
 }
 
-export interface IncidentReport {
-  id?: string;
-  eventId: string;
-  reporterId: number;
-  reporterName: string;
-  incidentType: IncidentType;
-  description: string;
-  severity: "LOW" | "MEDIUM" | "HIGH";
-  status: "PENDING" | "RESOLVED" | "IN_PROGRESS";
-  createdAt: string;
-  resolvedAt?: string;
-}
-
-export type IncidentType =
-  | "FACILITY_DAMAGE"
-  | "AUDIO_FAILURE"
-  | "TECHNICAL_ISSUE"
-  | "SAFETY_CONCERN"
-  | "CROWD_CONTROL"
-  | "OTHER";
-
-export interface CreateIncidentReportRequest {
-  incidentType: IncidentType;
-  description: string;
-  severity: "LOW" | "MEDIUM" | "HIGH";
-}
 
 export interface StaffAssignedEvent extends Event {
   assignedAt: string;
-  role: "CHECK_IN_STAFF";
+  role: "staff";
 }
