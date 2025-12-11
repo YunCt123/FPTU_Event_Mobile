@@ -13,12 +13,11 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RouteProp } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
+import { SPACING, FONTS, RADII, SHADOWS, COLORS } from "../../utils/theme";
 import { eventService } from "../../services/eventService";
 import EventRegisterModal from "../../components/Event/EventRegisterModal";
 import { Event, EventStatus } from "../../types/event";
 import { RootStackParamList } from "../../types/navigation";
-import { GradientButton } from "../../components";
 
 type EventDetailScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "EventDetails">;
@@ -363,7 +362,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
             }}
           >
             <LinearGradient
-              colors={buttonGradient}
+              colors={COLORS.gradient_button}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.registerButtonGradient}

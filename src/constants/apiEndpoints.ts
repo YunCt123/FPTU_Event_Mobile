@@ -30,6 +30,7 @@ export const EVENT_ENDPOINTS = {
 
 export const TICKET_ENDPOINTS = {
   REGISTER: "/tickets",
+  GET: "/seat",
   LIST: "/tickets/me",
   CREATE: "/tickets",
   BY_ID: (id: string) => `/tickets/${id}`,
@@ -39,4 +40,18 @@ export const TICKET_ENDPOINTS = {
 
 export const SEAT_ENDPOINTS = {
   GET: "/seat",
+};
+
+export const STAFF_ENDPOINTS = {
+  ASSIGNED_EVENTS: "/events/assigned",
+  CHECK_IN: (eventId: string) => `/events/${eventId}/check-in`,
+  MANUAL_CHECK_IN: (eventId: string) => `/events/${eventId}/manual-check-in`,
+  VALIDATE_TICKET: (eventId: string) => `/events/${eventId}/validate-ticket`,
+};
+
+export const INCIDENT_ENDPOINTS = {
+  CREATE: "/incidents",
+  MY: "/incidents/my",
+  BY_EVENT: (eventId: string) => `/incidents/event/${eventId}`,
+  UPDATE_STATUS: (incidentId: string) => `/incidents/${incidentId}/status`,
 };

@@ -19,27 +19,51 @@ interface RegisterEventParams {
 }
 
 class EventService {
+  /**
+   * Lấy danh sách sự kiện với phân trang và filter
+   * Endpoint: GET /events
+   */
   async getEvents(params?: GetEventsParams): Promise<GetEventsResponse> {
-    console.log(params);
-    const data = await api.get<GetEventsResponse>(EVENT_ENDPOINTS.LIST, {
-      params,
-    });
-    console.log(data);
-    return data;
+    try {
+      const data = await api.get<GetEventsResponse>(EVENT_ENDPOINTS.LIST, {
+        params,
+      });
+      return data;
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      throw error;
+    }
   }
 
+  /**
+   * Lấy thông tin chi tiết sự kiện theo ID
+   * Endpoint: GET /events/{eventId}
+   */
   async getEventById(eventId: string): Promise<Event> {
-    const data = await api.get<Event>(`${EVENT_ENDPOINTS.LIST}/${eventId}`);
-    return data;
+    try {
+      const data = await api.get<Event>(`${EVENT_ENDPOINTS.LIST}/${eventId}`);
+      return data;
+    } catch (error) {
+      console.error("Error fetching event by ID:", error);
+      throw error;
+    }
   }
 
-  async registerEvent(payload: RegisterEventParams) {
-    console.log(payload);
-    const res = await api.post<RegisterEventParams>(
-      `${TICKET_ENDPOINTS.REGISTER}`,
-      payload
-    );
-    return res;
+  /**
+   * Đăng ký tham gia sự kiện (tạo vé)
+   * Endpoint: POST /tickets
+   */
+  async registerEvent(payload: RegisterEventParams): Promise<RegisterEventParams> {
+    try {
+      const res = await api.post<RegisterEventParams>(
+        TICKET_ENDPOINTS.REGISTER,
+        payload
+      );
+      return res;
+    } catch (error) {
+      console.error("Error registering event:", error);
+      throw error;
+    }
   }
 }
 

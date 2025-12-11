@@ -6,10 +6,12 @@ export type SeatType = 'standard'
 export type EventStatus = "PUBLISHED" 
 
 export interface Seat {
-  id: string;
+  id: number;
   rowLabel: string;
   colLabel: number;
   seatType: SeatType;
+  isActive?: boolean;
+  venueId?: number;
 }
 
 // Interface chính cho booking
@@ -20,8 +22,10 @@ export interface Ticket {
   bookingDate: string;
   checkinTime: string | null;
   event: Event;
+  eventId: string;
   userId: number;
-  seatId: Seat;
+  seatId: number;
+  seat?: Seat;
   user: User;
 }
 

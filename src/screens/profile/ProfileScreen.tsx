@@ -143,10 +143,16 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       ...(isStaff
         ? [
             {
-              id: "staff-scan",
-              icon: "qr-code",
-              title: "Quét vé (Staff)",
-              subtitle: "Check-in nhanh bằng QR code",
+              id: "staff-events",
+              icon: "calendar",
+              title: "Sự kiện được phân công",
+              subtitle: "Xem sự kiện bạn được giao",
+            },
+            {
+              id: "incident-history",
+              icon: "warning",
+              title: "Lịch sử báo cáo sự cố",
+              subtitle: "Xem các báo cáo đã gửi",
             },
           ]
         : []),
@@ -162,9 +168,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             onPress={() => {
               if (item.id === "1") {
                 navigation.navigate("PersonalInfo");
-              }
-              if (item.id === "staff-scan") {
-                navigation.navigate("StaffScan");
+              } else if (item.id === "2") {
+                navigation.navigate("TicketHistory");
+              } else if (item.id === "staff-events") {
+                navigation.navigate("StaffAssignedEvents");
+              } else if (item.id === "incident-history") {
+                navigation.navigate("IncidentHistory");
               }
             }}
           >
