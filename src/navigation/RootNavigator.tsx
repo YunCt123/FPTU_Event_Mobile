@@ -124,11 +124,18 @@ const RootNavigator: React.FC = () => {
         <Stack.Screen name="TicketDetails" component={TicketDetailScreen} />
         <Stack.Screen name="TicketQRCode" component={TicketQRCodeScreen} />
         <Stack.Screen name="TicketHistory" component={TicketHistoryScreen} />
-        
+
         {/* Staff Screens */}
-        <Stack.Screen name="StaffAssignedEvents" component={StaffAssignedEventsScreen} />
+        <Stack.Screen
+          name="StaffAssignedEvents"
+          component={StaffAssignedEventsScreen}
+        />
+        <Stack.Screen name="StaffEventDetail" component={EventDetailScreen} />
         <Stack.Screen name="IncidentReport" component={IncidentReportScreen} />
-        <Stack.Screen name="IncidentHistory" component={IncidentHistoryScreen} />
+        <Stack.Screen
+          name="IncidentHistory"
+          component={IncidentHistoryScreen}
+        />
         <Stack.Screen name="StaffScan" component={TicketScanScreen} />
       </Stack.Navigator>
     </NavigationContainer>

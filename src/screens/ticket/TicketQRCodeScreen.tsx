@@ -526,7 +526,7 @@ const TicketQRCodeScreen: React.FC<TicketQRCodeScreenProps> = ({
                   style={{ marginRight: 8 }}
                 />
                 <Text style={styles.checkinModalButtonText}>
-                  Xem vé của tôi
+                  Về màn hình chính
                 </Text>
               </LinearGradient>
             </TouchableOpacity>

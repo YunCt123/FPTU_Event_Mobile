@@ -24,6 +24,8 @@ import { COLORS, FONTS, RADII, SHADOWS, SPACING } from "../../utils/theme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { STORAGE_KEYS } from "../../api/api";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRealtimeCheckin } from "../../hooks/useRealtimeCheckin";
+import { CheckinPayload } from "../../services/socketService";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -38,6 +40,9 @@ type TicketScanScreenProps = {
 };
 
 const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
+  const eventId = route?.params?.eventId;
+  const eventTitle = route?.params?.eventTitle;
+
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
