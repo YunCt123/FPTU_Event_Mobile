@@ -60,11 +60,9 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
       setTicket(response);
     } catch (error) {
       console.error("Failed to fetch ticket detail", error);
-      Alert.alert(
-        "Lỗi",
-        "Không thể tải thông tin vé",
-        [{ text: "OK", onPress: () => navigation.goBack() }]
-      );
+      Alert.alert("Lỗi", "Không thể tải thông tin vé", [
+        { text: "OK", onPress: () => navigation.goBack() },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -106,7 +104,12 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
         <Text style={{ color: COLORS.text }}>Không tìm thấy vé</Text>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={{ marginTop: 20, padding: 10, backgroundColor: COLORS.primary, borderRadius: 8 }}
+          style={{
+            marginTop: 20,
+            padding: 10,
+            backgroundColor: COLORS.primary,
+            borderRadius: 8,
+          }}
         >
           <Text style={{ color: "#FFF" }}>Quay lại</Text>
         </TouchableOpacity>
@@ -193,7 +196,11 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
 
               {ticket.event.venue && <View style={styles.divider} />}
               <View style={styles.infoRow}>
-                <Ionicons name="time-outline" size={20} color={COLORS.primary} />
+                <Ionicons
+                  name="time-outline"
+                  size={20}
+                  color={COLORS.primary}
+                />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Thời gian diễn ra</Text>
                   <Text style={styles.infoValue}>
@@ -209,10 +216,16 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
                 <>
                   <View style={styles.divider} />
                   <View style={styles.infoRow}>
-                    <Ionicons name="information-circle-outline" size={20} color={COLORS.primary} />
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={20}
+                      color={COLORS.primary}
+                    />
                     <View style={styles.infoContent}>
                       <Text style={styles.infoLabel}>Mô tả</Text>
-                      <Text style={styles.infoValue}>{ticket.event.description}</Text>
+                      <Text style={styles.infoValue}>
+                        {ticket.event.description}
+                      </Text>
                     </View>
                   </View>
                 </>
@@ -225,10 +238,16 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
             <Text style={styles.cardTitle}>Thông tin vé</Text>
 
             <View style={styles.infoRow}>
-              <Ionicons name="calendar-outline" size={20} color={COLORS.primary} />
+              <Ionicons
+                name="calendar-outline"
+                size={20}
+                color={COLORS.primary}
+              />
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Ngày đặt vé</Text>
-                <Text style={styles.infoValue}>{formatDateTime(ticket.bookingDate)}</Text>
+                <Text style={styles.infoValue}>
+                  {formatDateTime(ticket.bookingDate)}
+                </Text>
               </View>
             </View>
 
@@ -236,10 +255,16 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
               <>
                 <View style={styles.divider} />
                 <View style={styles.infoRow}>
-                  <Ionicons name="checkmark-circle-outline" size={20} color={COLORS.primary} />
+                  <Ionicons
+                    name="checkmark-circle-outline"
+                    size={20}
+                    color={COLORS.primary}
+                  />
                   <View style={styles.infoContent}>
                     <Text style={styles.infoLabel}>Thời gian check-in</Text>
-                    <Text style={styles.infoValue}>{formatDateTime(ticket.checkinTime)}</Text>
+                    <Text style={styles.infoValue}>
+                      {formatDateTime(ticket.checkinTime)}
+                    </Text>
                   </View>
                 </View>
               </>
@@ -249,7 +274,11 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
               <>
                 <View style={styles.divider} />
                 <View style={styles.infoRow}>
-                  <Ionicons name="business-outline" size={20} color={COLORS.primary} />
+                  <Ionicons
+                    name="business-outline"
+                    size={20}
+                    color={COLORS.primary}
+                  />
                   <View style={styles.infoContent}>
                     <Text style={styles.infoLabel}>Chỗ ngồi</Text>
                     {ticket.seat ? (
@@ -268,10 +297,16 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
 
             <View style={styles.divider} />
             <View style={styles.infoRow}>
-              <Ionicons name="qr-code-outline" size={20} color={COLORS.primary} />
+              <Ionicons
+                name="qr-code-outline"
+                size={20}
+                color={COLORS.primary}
+              />
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Mã QR</Text>
-                <Text style={styles.infoValue} numberOfLines={1}>{ticket.qrCode}</Text>
+                <Text style={styles.infoValue} numberOfLines={1}>
+                  {ticket.qrCode}
+                </Text>
               </View>
             </View>
           </View>
@@ -281,7 +316,11 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
             <Text style={styles.cardTitle}>Thông tin người dùng</Text>
 
             <View style={styles.infoRow}>
-              <Ionicons name="person-outline" size={20} color={COLORS.primary} />
+              <Ionicons
+                name="person-outline"
+                size={20}
+                color={COLORS.primary}
+              />
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Họ và tên</Text>
                 <Text style={styles.infoValue}>
@@ -315,7 +354,9 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
           <View style={styles.footer}>
             <GradientButton
               title="Xem mã QR"
-              onPress={() => navigation.navigate("TicketQRCode", { ticketId: ticket.id })}
+              onPress={() =>
+                navigation.navigate("TicketQRCode", { ticketId: ticket.id })
+              }
               icon="qr-code"
             />
           </View>

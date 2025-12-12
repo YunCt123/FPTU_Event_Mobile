@@ -21,6 +21,7 @@ import {
 } from "../../utils/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { authService } from "../../services/authService";
+import { notificationService } from "../../services/notificationService";
 import { LoginRequest } from "../../types/auth";
 import { GradientButton } from "../../components";
 
@@ -48,6 +49,17 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       const res = await authService.login(payload);
 
       console.log("Login success:", res);
+
+      // Đăng ký subscription với backend sau khi login thành công
+      try {
+        await notificationService.registerSubscription();
+      } catch (notifError) {
+        console.warn(
+          "Failed to register notification subscription:",
+          notifError
+        );
+      }
+
       // Điều hướng sang app chính sau khi login thành công (RootStack -> Main)
       // LoginScreen nằm trong AuthNavigator, còn AuthNavigator là một screen của RootNavigator (Auth).
       // Vì vậy chỉ cần lấy parent 1 lần là tới RootStack.

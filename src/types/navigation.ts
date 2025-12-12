@@ -3,30 +3,30 @@ import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { RegisterRequest } from "./auth";
 
 export type RootStackParamList = {
-    // Auth Screens
-    Auth: undefined;
-    AuthLanding: undefined;
-    Register: undefined;
-    Login: undefined;
+  // Auth Screens
+  Auth: undefined;
+  AuthLanding: undefined;
+  Register: undefined;
+  Login: undefined;
 
-    // Main App (Bottom Tabs) 
-    Main: undefined;
-    MainTabs: undefined;
+  // Main App (Bottom Tabs)
+  Main: undefined;
+  MainTabs: undefined;
 
-    // Event Screens
-    EventList: undefined;
-    EventDetails: { eventId: string };
-    MyEvents: undefined;
+  // Event Screens
+  EventList: undefined;
+  EventDetails: { eventId: string };
+  MyEvents: undefined;
 
     // Ticket Screens
     TicketDetails: { ticketId: string };
     TicketQRCode: { ticketId: string };
     TicketHistory: undefined;
 
-    // Profile Screens
-    Profile: undefined;
-    EditProfile: undefined;
-    PersonalInfo: undefined;
+  // Profile Screens
+  Profile: undefined;
+  EditProfile: undefined;
+  PersonalInfo: undefined;
 
     // Staff Screens
     StaffAssignedEvents: undefined;
@@ -60,7 +60,6 @@ export type MainTabParamList = {
   Event: undefined;
   Ticket: undefined;
 };
-
 
 export type RootStackNavigationProp =
   NativeStackNavigationProp<RootStackParamList>;
