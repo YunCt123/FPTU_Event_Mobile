@@ -56,6 +56,8 @@ export const INCIDENT_ENDPOINTS = {
   MY: "/incidents/my",
   BY_EVENT: (eventId: string) => `/incidents/event/${eventId}`,
   UPDATE_STATUS: (incidentId: string) => `/incidents/${incidentId}/status`,
+};
+
 export const NOTIFICATION_ENDPOINTS = {
   SUBSCRIPTIONS: "/notifications/subscriptions",
   TEST_SEND: "/notifications/test-send",

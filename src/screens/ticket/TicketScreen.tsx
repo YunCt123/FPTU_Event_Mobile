@@ -205,53 +205,8 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
             <View style={styles.header}>
               <Text style={styles.title}>Vé của tôi</Text>
 
-            {/* Tabs */}
-            <View style={styles.tabContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.tab,
-                  activeTab === "valid" && styles.tabActive,
-                ]}
-                onPress={() => setActiveTab("valid")}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    activeTab === "valid" && styles.tabTextActive,
-                  ]}
-                >
-                  Có hiệu lực
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.tab, activeTab === "used" && styles.tabActive]}
-                onPress={() => setActiveTab("used")}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    activeTab === "used" && styles.tabTextActive,
-                  ]}
-                >
-                  Đã sử dụng
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          {filteredTickets.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Ionicons
-                name="ticket-outline"
-                size={64}
-                color={COLORS.text}
-                style={{ opacity: 0.3, marginBottom: SPACING.lg }}
-              />
-              <Text style={styles.emptyText}>
-                {activeTab === "valid"
-                  ? "Bạn chưa có vé nào"
-                  : "Chưa có vé đã qua"}
-              </Text>
-              {activeTab === "valid" && (
+              {/* Tabs */}
+              <View style={styles.tabContainer}>
                 <TouchableOpacity
                   style={[
                     styles.tab,
@@ -278,7 +233,7 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
                       activeTab === "used" && styles.tabTextActive,
                     ]}
                   >
-                    Đã qua
+                    Đã sử dụng
                   </Text>
                 </TouchableOpacity>
               </View>
