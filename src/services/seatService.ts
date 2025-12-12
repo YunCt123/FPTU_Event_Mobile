@@ -1,4 +1,3 @@
-import { event } from "react-native/types_generated/Libraries/Animated/AnimatedExports";
 import { api } from "../api/api";
 import { SEAT_ENDPOINTS } from "../constants";
 
