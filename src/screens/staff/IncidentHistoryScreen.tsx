@@ -14,7 +14,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { incidentService } from "../../services/incidentService";
-import { Incident, IncidentSeverity, IncidentStatus } from "../../types/incident";
+import {
+  Incident,
+  IncidentSeverity,
+  IncidentStatus,
+} from "../../types/incident";
 
 type IncidentHistoryScreenProps = {
   navigation: NativeStackNavigationProp<any>;

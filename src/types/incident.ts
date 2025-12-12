@@ -17,6 +17,7 @@ export interface IncidentReportRequest {
   eventId: string;
   title: string;
   description: string;
+  imageUrl: string;
   severity: IncidentSeverity;
 }
 
