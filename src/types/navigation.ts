@@ -18,17 +18,22 @@ export type RootStackParamList = {
   EventDetails: { eventId: string };
   MyEvents: undefined;
 
-  // Ticket Screens
-  TicketDetails: { ticketId: string };
-  TicketQRCode: { ticketId: string };
+    // Ticket Screens
+    TicketDetails: { ticketId: string };
+    TicketQRCode: { ticketId: string };
+    TicketHistory: undefined;
 
   // Profile Screens
   Profile: undefined;
   EditProfile: undefined;
   PersonalInfo: undefined;
 
-  // Staff
-  StaffScan: { eventId?: string; eventTitle?: string } | undefined;
+    // Staff Screens
+    StaffAssignedEvents: undefined;
+    StaffEventDetail: { eventId: string };
+    IncidentReport: { eventId: string; eventTitle?: string };
+    IncidentHistory: undefined;
+    StaffScan: { eventId: string; eventTitle?: string };
 };
 
 export type AuthStackParamList = {

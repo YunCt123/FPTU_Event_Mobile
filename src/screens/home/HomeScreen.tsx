@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,11 +10,13 @@ import {
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import FeaturedEventBanner, {
   FeaturedEvent,
 } from "../../components/FeaturedEventBanner";
 import img from "../../assets/fpt_logo.png";
+import { STORAGE_KEYS } from "../../api/api";
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -51,6 +53,26 @@ const FEATURED_EVENTS: FeaturedEvent[] = [
 ];
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadUserRole = async () => {
+      try {
+        const userStr = await AsyncStorage.getItem(STORAGE_KEYS.USER);
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          setUserRole(user.roleName);
+        }
+      } catch (error) {
+        console.error("Error loading user role:", error);
+      }
+    };
+
+    loadUserRole();
+  }, []);
+
+  const isStaff = userRole === "staff";
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -191,6 +213,48 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             {/* 4. Quick Actions - Lối tắt cho các tác vụ thường xuyên */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Thao tác nhanh</Text>
+              
+              {/* Staff Quick Access */}
+              {isStaff && (
+                <TouchableOpacity
+                  style={styles.staffBanner}
+                  onPress={() => navigation.navigate("StaffAssignedEvents")}
+                  activeOpacity={0.8}
+                >
+                  <LinearGradient
+                    colors={["#FF6B6B", "#FF8E53"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.staffBannerGradient}
+                  >
+                    <View style={styles.staffBannerContent}>
+                      <View style={styles.staffBannerLeft}>
+                        <View style={styles.staffIconContainer}>
+                          <Ionicons
+                            name="shield-checkmark"
+                            size={32}
+                            color={COLORS.white}
+                          />
+                        </View>
+                        <View>
+                          <Text style={styles.staffBannerTitle}>
+                            Chế độ Staff
+                          </Text>
+                          <Text style={styles.staffBannerSubtitle}>
+                            Xem sự kiện được phân công
+                          </Text>
+                        </View>
+                      </View>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={24}
+                        color={COLORS.white}
+                      />
+                    </View>
+                  </LinearGradient>
+                </TouchableOpacity>
+              )}
+
               <View style={styles.quickActionsContainer}>
                 <TouchableOpacity
                   style={styles.actionCard}
@@ -206,18 +270,24 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   <Text style={styles.actionText}>Đăng ký{"\n"}sự kiện</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.actionCard}>
+                <TouchableOpacity 
+                  style={styles.actionCard}
+                  onPress={() => navigation.navigate("Ticket")}
+                >
                   <View style={styles.actionIcon}>
                     <Ionicons name="qr-code" size={28} color={COLORS.primary} />
                   </View>
-                  <Text style={styles.actionText}>Check-in</Text>
+                  <Text style={styles.actionText}>Vé của tôi</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.actionCard}>
+                <TouchableOpacity 
+                  style={styles.actionCard}
+                  onPress={() => navigation.navigate("Profile")}
+                >
                   <View style={styles.actionIcon}>
-                    <Ionicons name="create" size={28} color={COLORS.primary} />
+                    <Ionicons name="person" size={28} color={COLORS.primary} />
                   </View>
-                  <Text style={styles.actionText}>Tạo{"\n"}sự kiện</Text>
+                  <Text style={styles.actionText}>Hồ sơ</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -368,6 +438,45 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: COLORS.text,
     textAlign: "center",
+  },
+  // Staff Banner Styles
+  staffBanner: {
+    marginBottom: SPACING.md,
+    borderRadius: RADII.card,
+    overflow: "hidden",
+    ...SHADOWS.md,
+  },
+  staffBannerGradient: {
+    padding: SPACING.lg,
+  },
+  staffBannerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  staffBannerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+  },
+  staffIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  staffBannerTitle: {
+    fontSize: FONTS.body,
+    fontWeight: "bold",
+    color: COLORS.white,
+  },
+  staffBannerSubtitle: {
+    fontSize: FONTS.caption,
+    color: COLORS.white,
+    opacity: 0.9,
+    marginTop: SPACING.xs,
   },
 });
 

@@ -1,5 +1,6 @@
 export const COLORS = {
   primary: "#F36F21",
+  primaryLight: "#FFE8D6",
   blue: "#004070",
   success: "#00C853",
   warning: "#FFB300",
@@ -7,7 +8,10 @@ export const COLORS = {
   white: "#FFFFFF",
   black: "#000000",
   background: "#F5F5F5",
+  backgroundLight: "#FAFAFA",
   text: "#212121",
+  textSecondary: "#757575",
+  border: "#E0E0E0",
   overlay: "rgba(0, 0, 0, 0.5)",
 
   gradient_1: ["#86E7FF", "#FFF5EC", "#FFE8CF", "#F1FDF6", "#D2F8E2"] as const,
@@ -100,6 +104,36 @@ export const SHADOWS = {
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
+  },
+  large: {
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.35,
+    shadowRadius: 6.68,
+    elevation: 11,
+  },
+  medium: {
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.27,
+    shadowRadius: 4.65,
+    elevation: 6,
+  },
+  small: {
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
   },
 } as const;
 

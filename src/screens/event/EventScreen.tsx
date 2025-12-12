@@ -28,11 +28,11 @@ const PRESET_CATEGORIES = [
   "Khoa học",
 ];
 
-const STATUS_LABELS: Record<EventStatus, string> = {
-  PUBLISHED: "PUBLISHED",
-  DRAFT: "DRAFT",
-  PENDING: "PENDING",
-  CANCELLED: "CANCELLED",
+const STATUS_COLORS: Record<EventStatus, string> = {
+  PUBLISHED: "#4CAF50",
+  DRAFT: "#FF9800",
+  PENDING: "#2196F3",
+  CANCELLED: "#F44336",
 };
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -128,9 +128,6 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
       minute: "2-digit",
     });
   };
-
-  const getStatusLabel = (status: EventStatus) =>
-    STATUS_LABELS[status] ?? status;
 
   return (
     <View style={styles.container}>
@@ -237,9 +234,9 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
                         color={COLORS.primary}
                       />
                     </View>
-                    <View style={styles.categoryBadge}>
+                    <View style={[styles.categoryBadge, {backgroundColor: STATUS_COLORS[event.status]}]}>
                       <Text style={styles.categoryBadgeText}>
-                        {getStatusLabel(event.status)}
+                        {event.status}
                       </Text>
                     </View>
                   </View>
@@ -312,7 +309,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
                     }
                     style={styles.registerButton}
                   >
-                    <Text style={styles.registerButtonText}>Đăng ký ngay</Text>
+                    <Text style={styles.registerButtonText}>Xem chi tiết</Text>
                   </TouchableOpacity>
                 </TouchableOpacity>
               ))

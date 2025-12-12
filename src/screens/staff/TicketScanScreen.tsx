@@ -24,20 +24,21 @@ import { COLORS, FONTS, RADII, SHADOWS, SPACING } from "../../utils/theme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { STORAGE_KEYS } from "../../api/api";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRealtimeCheckin } from "../../hooks/useRealtimeCheckin";
-import { RootStackParamList } from "../../types/navigation";
-import { CheckinPayload } from "../../services/socketService";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RouteProp } from "@react-navigation/native";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const SCANNER_SIZE = SCREEN_WIDTH * 0.7;
 
-type StaffScanRouteProp = RouteProp<RootStackParamList, "StaffScan">;
+type TicketScanScreenProps = {
+  navigation?: NativeStackNavigationProp<any>;
+  route?: RouteProp<
+    { params?: { eventId?: string; eventTitle?: string } },
+    "params"
+  >;
+};
 
-const TicketScanScreen = () => {
-  const route = useRoute<StaffScanRouteProp>();
-  const eventId = route.params?.eventId;
-  const eventTitle = route.params?.eventTitle;
-
+const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -562,6 +563,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.md,
     paddingBottom: SPACING.lg,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    position: "absolute",
+    left: SPACING.xl,
+    top: 64,
+    zIndex: 10,
   },
   headerTitle: {
     color: COLORS.white,
