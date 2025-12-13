@@ -729,6 +729,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     padding: SPACING.lg,
     gap: SPACING.md,
+    marginBottom: SPACING.xl,
   },
   resetButton: {
     flex: 1,
