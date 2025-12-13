@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  RefreshControl,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
@@ -44,6 +45,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
   const [page, setPage] = useState(1);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const categoryOptions = useMemo(() => {
@@ -62,10 +64,14 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
     return ["Tất cả", ...dynamicCategories];
   }, [events]);
 
-  const fetchEvents = React.useCallback(
-    async (searchValue: string) => {
+  const fetchEvents = useCallback(
+    async (searchValue: string, isRefresh: boolean = false) => {
       try {
-        setLoading(true);
+        if (isRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
         setErrorMessage(null);
         const params: {
           search?: string;
@@ -89,6 +95,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
         Alert.alert("Lỗi", "Không thể tải danh sách sự kiện");
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
     },
     [page]
@@ -96,6 +103,10 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
 
   useEffect(() => {
     fetchEvents(appliedSearch);
+  }, [fetchEvents, appliedSearch]);
+
+  const onRefresh = useCallback(() => {
+    fetchEvents(appliedSearch, true);
   }, [fetchEvents, appliedSearch]);
 
   const handleSearchSubmit = () => {
@@ -140,6 +151,14 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[COLORS.primary]}
+              tintColor={COLORS.primary}
+            />
+          }
         >
           <View style={styles.header}>
             <Text style={styles.title}>Sự kiện</Text>
@@ -234,7 +253,12 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
                         color={COLORS.primary}
                       />
                     </View>
-                    <View style={[styles.categoryBadge, {backgroundColor: STATUS_COLORS[event.status]}]}>
+                    <View
+                      style={[
+                        styles.categoryBadge,
+                        { backgroundColor: STATUS_COLORS[event.status] },
+                      ]}
+                    >
                       <Text style={styles.categoryBadgeText}>
                         {event.status}
                       </Text>

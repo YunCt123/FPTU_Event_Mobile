@@ -2,6 +2,8 @@ import { api } from "../api/api";
 import { TICKET_ENDPOINTS } from "../constants/apiEndpoints";
 import {
   CreateTicketRequest,
+  ManualCheckinRequest,
+  ManualCheckinResponse,
   ScanTicketRequest,
   ScanTicketResponse,
   Ticket,
@@ -23,7 +25,6 @@ interface GetTicketsParams {
   status?: string;
   eventId?: string;
 }
-
 
 class TicketService {
   /**
@@ -63,9 +64,7 @@ class TicketService {
    */
   async getTicketById(ticketId: string): Promise<Ticket> {
     try {
-      const response = await api.get<Ticket>(
-        TICKET_ENDPOINTS.BY_ID(ticketId)
-      );
+      const response = await api.get<Ticket>(TICKET_ENDPOINTS.BY_ID(ticketId));
       return response;
     } catch (error) {
       console.error("Failed to fetch ticket by ID", error);
@@ -101,6 +100,27 @@ class TicketService {
       return response;
     } catch (error) {
       console.error("Failed to scan ticket", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Manual check-in vé khi không thể quét QR code
+   * Có thể sử dụng ticketId hoặc (studentCode + eventId) để tìm vé
+   * Endpoint: POST /tickets/manual-checkin
+   * Yêu cầu quyền: staff
+   */
+  async manualCheckin(
+    data: ManualCheckinRequest
+  ): Promise<ManualCheckinResponse> {
+    try {
+      const response = await api.post<ManualCheckinResponse>(
+        TICKET_ENDPOINTS.MANUAL_CHECKIN,
+        data
+      );
+      return response;
+    } catch (error) {
+      console.error("Failed to manual check-in ticket", error);
       throw error;
     }
   }

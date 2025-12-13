@@ -38,6 +38,7 @@ export const TICKET_ENDPOINTS = {
   BY_ID: (id: string) => `/tickets/${id}`,
   BY_QR: (qrCode: string) => `/tickets/qr/${qrCode}`,
   SCAN: "/tickets/scan",
+  MANUAL_CHECKIN: "/tickets/manual-checkin",
 };
 
 export const SEAT_ENDPOINTS = {

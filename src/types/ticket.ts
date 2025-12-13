@@ -1,9 +1,9 @@
 import { Event } from "./event";
 import { User } from "./user";
 
-export type TicketStatus = 'VALID' | 'USED' | 'CANCELLED' | 'EXPIRED';
-export type SeatType = 'standard'
-export type EventStatus = "PUBLISHED" 
+export type TicketStatus = "VALID" | "USED" | "CANCELLED" | "EXPIRED";
+export type SeatType = "standard";
+export type EventStatus = "PUBLISHED";
 
 export interface Seat {
   id: number;
@@ -44,6 +44,20 @@ export interface ScanTicketRequest {
 }
 
 export interface ScanTicketResponse {
+  success: boolean;
+  message: string;
+  ticket: Ticket;
+  user: User;
+}
+
+export interface ManualCheckinRequest {
+  ticketId?: string;
+  studentCode?: string;
+  eventId?: string;
+  staffId: number;
+}
+
+export interface ManualCheckinResponse {
   success: boolean;
   message: string;
   ticket: Ticket;
