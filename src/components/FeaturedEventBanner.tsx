@@ -118,7 +118,7 @@ export const FeaturedEventBanner: React.FC<Props> = ({
           >
             {event.gradientColors ? (
               <LinearGradient
-                colors={event.gradientColors as any}
+                colors={COLORS.gradient_2}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.card}
@@ -192,11 +192,11 @@ const renderCardContent = (event: FeaturedEvent) => (
         )}
       </View>
 
-      {event.attendees && (
+      {(event.attendees !== undefined && event.attendees !== null) && (
         <View style={styles.attendeesContainer}>
           <Ionicons name="people" size={16} color={COLORS.white} />
           <Text style={styles.attendeesText}>
-            {event.attendees}+ người tham gia
+            {String(event.attendees)}+ người tham gia
           </Text>
         </View>
       )}

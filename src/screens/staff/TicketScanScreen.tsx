@@ -241,6 +241,12 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
       <View style={styles.overlay}>
         {/* Header */}
         <SafeAreaView edges={["top"]} style={styles.header}>
+           <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+          </TouchableOpacity>
           <Text style={styles.headerTitle}>Quét vé</Text>
           {eventTitle ? (
             <Text style={styles.headerEventName} numberOfLines={1}>
