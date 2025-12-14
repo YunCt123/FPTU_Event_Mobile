@@ -197,14 +197,16 @@ const renderCardContent = (event: FeaturedEvent) => (
         )}
       </View>
 
-      {(event.attendees !== undefined && event.attendees !== null) && (
+      {event.attendees !== undefined &&
+      event.attendees !== null &&
+      event.attendees > 0 ? (
         <View style={styles.attendeesContainer}>
           <Ionicons name="people" size={16} color={COLORS.white} />
           <Text style={styles.attendeesText}>
-            {String(event.attendees)}+ người tham gia
+            {event.attendees}+ người tham gia
           </Text>
         </View>
-      )}
+      ) : null}
     </View>
 
     {/* CTA Button */}

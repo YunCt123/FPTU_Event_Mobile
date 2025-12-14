@@ -13,11 +13,14 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RouteProp } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SPACING, FONTS, RADII, SHADOWS, COLORS } from "../../utils/theme";
 import { eventService } from "../../services/eventService";
 import EventRegisterModal from "../../components/Event/EventRegisterModal";
 import { Event, EventStatus } from "../../types/event";
 import { RootStackParamList } from "../../types/navigation";
+import { STORAGE_KEYS } from "../../api/api";
+import { User } from "../../types/user";
 
 type EventDetailScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "EventDetails">;
@@ -42,6 +45,24 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
   const [selectedSeatLabel, setSelectedSeatLabel] = useState<string | null>(
     null
   );
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  const isStaff = userRole === "staff";
+
+  useEffect(() => {
+    const loadUserRole = async () => {
+      try {
+        const userStr = await AsyncStorage.getItem(STORAGE_KEYS.USER);
+        if (userStr) {
+          const user: User = JSON.parse(userStr);
+          setUserRole(user.roleName);
+        }
+      } catch (error) {
+        console.error("Error loading user role:", error);
+      }
+    };
+    loadUserRole();
+  }, []);
 
   useEffect(() => {
     fetchEventDetail();
@@ -347,49 +368,53 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
           </View>
         </ScrollView>
 
-        {/* Register Button */}
-        <View style={styles.footer}>
-          <TouchableOpacity
-            style={[
-              styles.registerButton,
-              !isRegisterAvailable && styles.registerButtonDisabled,
-            ]}
-            disabled={!isRegisterAvailable}
-            onPress={() => {
-              if (isRegisterAvailable) {
-                setRegisterModalVisible(true);
-              }
-            }}
-          >
-            <LinearGradient
-              colors={COLORS.gradient_button}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.registerButtonGradient}
+        {/* Register Button - Only show for non-staff users */}
+        {!isStaff && (
+          <View style={styles.footer}>
+            <TouchableOpacity
+              style={[
+                styles.registerButton,
+                !isRegisterAvailable && styles.registerButtonDisabled,
+              ]}
+              disabled={!isRegisterAvailable}
+              onPress={() => {
+                if (isRegisterAvailable) {
+                  setRegisterModalVisible(true);
+                }
+              }}
             >
-              <Ionicons
-                name="flash-outline"
-                size={20}
-                color="#FFFFFF"
-                style={styles.registerButtonIcon}
-              />
-              <View style={styles.registerButtonTextContainer}>
-                <Text style={styles.registerButtonText}>{buttonLabel}</Text>
-                <Text
-                  style={[
-                    styles.registerButtonSubText,
-                    !isRegisterAvailable && { color: "rgba(255,255,255,0.7)" },
-                  ]}
-                >
-                  {buttonSubLabel}
-                </Text>
-              </View>
-              <View style={styles.registerButtonArrow}>
-                <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
+              <LinearGradient
+                colors={COLORS.gradient_button}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.registerButtonGradient}
+              >
+                <Ionicons
+                  name="flash-outline"
+                  size={20}
+                  color="#FFFFFF"
+                  style={styles.registerButtonIcon}
+                />
+                <View style={styles.registerButtonTextContainer}>
+                  <Text style={styles.registerButtonText}>{buttonLabel}</Text>
+                  <Text
+                    style={[
+                      styles.registerButtonSubText,
+                      !isRegisterAvailable && {
+                        color: "rgba(255,255,255,0.7)",
+                      },
+                    ]}
+                  >
+                    {buttonSubLabel}
+                  </Text>
+                </View>
+                <View style={styles.registerButtonArrow}>
+                  <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <EventRegisterModal
           visible={isRegisterModalVisible}

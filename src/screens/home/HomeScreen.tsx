@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,79 +13,76 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
-import FeaturedEventBanner, {
-  FeaturedEvent,
-} from "../../components/FeaturedEventBanner";
+import FeaturedEventBanner from "../../components/FeaturedEventBanner";
 import { eventService } from "../../services/eventService";
 import { Event } from "../../types/event";
 import img from "../../assets/fpt_logo.png";
 import { STORAGE_KEYS } from "../../api/api";
-import { eventService } from "../../services/eventService";
-import { Event } from "../../types/event";
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<any>;
 };
 
-// Helper function to convert Event to FeaturedEvent
-const convertToFeaturedEvent = (event: Event): FeaturedEvent => {
-  return {
-    id: event.id,
-    title: event.title,
-    subtitle: event.category || "Sự kiện",
-    gradientColors: COLORS.gradient_1,
-    date: new Date(event.startTime).toLocaleDateString('vi-VN'),
-    location: event.venue?.name || "Đang cập nhật",
-    attendees: event.registeredCount || 0,
-  };
-};
+const GRADIENT_COLORS = [
+  COLORS.gradient_2,
+  [COLORS.primary, "#FF8E53"],
+  ["#4CAF50", "#66BB6A"],
+] as const;
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [featuredEvents, setFeaturedEvents] = useState<FeaturedEvent[]>([]);
-  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const userStr = await AsyncStorage.getItem(STORAGE_KEYS.USER);
-        if (userStr) {
-          const user: User = JSON.parse(userStr);
-          setUserRole(user.roleName);
-          setUserAvatar(user.avatar || null);
+  // Load user data when screen is focused (including after login)
+  useFocusEffect(
+    useCallback(() => {
+      const loadUser = async () => {
+        try {
+          const userStr = await AsyncStorage.getItem(STORAGE_KEYS.USER);
+          if (userStr) {
+            const user: User = JSON.parse(userStr);
+            setUserRole(user.roleName);
+            setUserAvatar(user.avatar || null);
+          }
+        } catch (error) {
+          console.error("Error loading user:", error);
         }
-      } catch (error) {
-        console.error("Error loading user:", error);
-      }
-    };
+      };
 
-    loadUser();
-  }, []);
+      loadUser();
+    }, [])
+  );
 
   useEffect(() => {
     const loadEvents = async () => {
       try {
         setLoading(true);
-        // Lấy danh sách sự kiện với status PUBLISHED
         const response = await eventService.getEvents({
-          status: "PUBLISHED",
-          limit: 10,
+          page: 1,
+          limit: 50,
         });
-        
-        if (response.data && response.data.length > 0) {
-          // Chuyển đổi events cho featured banner (3 sự kiện đầu tiên)
-          const featured = response.data.slice(0, 3).map(convertToFeaturedEvent);
-          setFeaturedEvents(featured);
-          
-          // Lấy các sự kiện sắp tới (sắp xếp theo thời gian bắt đầu)
-          const upcoming = response.data
-            .filter(event => new Date(event.startTime) > new Date())
-            .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-            .slice(0, 2);
-          setUpcomingEvents(upcoming);
+
+        // Handle different response formats
+        let eventsData: Event[] = [];
+        if (Array.isArray(response)) {
+          eventsData = response;
+        } else if (
+          response &&
+          typeof response === "object" &&
+          "data" in response
+        ) {
+          eventsData = Array.isArray(response.data) ? response.data : [];
         }
+
+        // Filter only published events
+        const publishedEvents = eventsData.filter(
+          (event) => event.status === "PUBLISHED"
+        );
+        setEvents(publishedEvents);
       } catch (error) {
         console.error("Error loading events:", error);
       } finally {
@@ -140,15 +137,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const isStaff = userRole === "staff";
 
-  if (loading) {
-    return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={{ color: COLORS.text, marginTop: SPACING.md }}>Đang tải sự kiện...</Text>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -170,10 +158,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   onPress={() => navigation.navigate("Profile")}
                   style={styles.avatar}
                 >
-                  <Image
-                    source={{ uri: userAvatar }}
-                    style={styles.avatarImage}
-                  />
+                  {userAvatar ? (
+                    <Image
+                      source={{ uri: userAvatar }}
+                      style={styles.avatarImage}
+                    />
+                  ) : (
+                    <View style={styles.avatarPlaceholder}>
+                      <Ionicons name="person" size={24} color={COLORS.white} />
+                    </View>
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
@@ -364,21 +358,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 </TouchableOpacity>
 
                 {isStaff ? (
-                  <>
-                    <TouchableOpacity
-                      style={styles.actionCard}
-                      onPress={() => navigation.navigate("IncidentHistory")}
-                    >
-                      <View style={styles.actionIcon}>
-                        <Ionicons
-                          name="list"
-                          size={28}
-                          color={COLORS.primary}
-                        />
-                      </View>
-                      <Text style={styles.actionText}>Xem sự cố</Text>
-                    </TouchableOpacity>
-                  </>
+                  <TouchableOpacity
+                    style={styles.actionCard}
+                    onPress={() => navigation.navigate("IncidentHistory")}
+                  >
+                    <View style={styles.actionIcon}>
+                      <Ionicons name="list" size={28} color={COLORS.primary} />
+                    </View>
+                    <Text style={styles.actionText}>Xem sự cố</Text>
+                  </TouchableOpacity>
                 ) : (
                   <TouchableOpacity
                     style={styles.actionCard}
@@ -450,6 +438,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 2,
     borderColor: COLORS.white,
+  },
+  avatarPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: COLORS.white,
+    backgroundColor: COLORS.primary,
+    justifyContent: "center",
+    alignItems: "center",
   },
   content: {
     paddingHorizontal: SPACING.screenPadding,

@@ -96,7 +96,13 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
   }, [events, assignedEvents, isStaff]);
 
   const fetchEvents = useCallback(
-    async (searchValue: string, isRefresh: boolean = false) => {
+    async (
+      searchValue: string,
+      isRefresh: boolean = false,
+      role: string | null = userRole
+    ) => {
+      const isStaffRole = role === "staff";
+
       try {
         if (isRefresh) {
           setRefreshing(true);
@@ -105,7 +111,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
         }
         setErrorMessage(null);
 
-        if (isStaff) {
+        if (isStaffRole) {
           // Fetch assigned events for staff
           console.log("Fetching assigned events for staff");
           try {
@@ -170,7 +176,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
       } catch (error: any) {
         console.error("Failed to fetch events", error);
         setErrorMessage(
-          isStaff
+          isStaffRole
             ? "Không thể tải danh sách sự kiện được phân công"
             : "Không thể tải danh sách sự kiện"
         );
@@ -182,7 +188,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
           Alert.alert(
             "Lỗi",
             error.response?.data?.message ||
-              (isStaff
+              (isStaffRole
                 ? "Không thể tải danh sách sự kiện được phân công"
                 : "Không thể tải danh sách sự kiện")
           );
@@ -193,7 +199,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
         setRefreshing(false);
       }
     },
-    [page, isStaff]
+    [page, userRole]
   );
 
   // Fetch events when userRole is first set
@@ -205,7 +211,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
         "isStaff:",
         isStaff
       );
-      fetchEvents(appliedSearch);
+      fetchEvents(appliedSearch, false, userRole);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userRole]); // Only depend on userRole to avoid infinite loop
