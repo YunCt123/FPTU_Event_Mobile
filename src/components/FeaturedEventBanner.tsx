@@ -197,7 +197,7 @@ const renderCardContent = (event: FeaturedEvent) => (
         )}
       </View>
 
-      {event.attendees && (
+      {event.attendees !== undefined && event.attendees > 0 && (
         <View style={styles.attendeesContainer}>
           <Ionicons name="people" size={16} color={COLORS.white} />
           <Text style={styles.attendeesText}>

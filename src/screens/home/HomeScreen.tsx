@@ -109,7 +109,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       .map((event, index) => ({
         id: event.id,
         title: event.title,
-        subtitle: event.description?.substring(0, 50) + "..." || "",
+        subtitle: event.description
+          ? event.description.substring(0, 50) + "..."
+          : "",
         gradientColors: GRADIENT_COLORS[index % GRADIENT_COLORS.length],
         date: formatDate(event.startTime),
         location: event.venue?.name || "Đang cập nhật",
@@ -154,18 +156,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   onPress={() => navigation.navigate("Profile")}
                   style={styles.avatar}
                 >
-                  {userAvatar ? (
-                    <Image
-                      source={{ uri: userAvatar }}
-                      style={styles.avatarImage}
-                    />
-                  ) : (
-                    <Ionicons
-                      name="person-circle"
-                      size={40}
-                      color={COLORS.text}
-                    />
-                  )}
+                  <Image
+                    source={{ uri: userAvatar }}
+                    style={styles.avatarImage}
+                  />
                 </TouchableOpacity>
               </View>
             </View>
