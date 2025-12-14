@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Image,
   Animated,
-  Modal,
   ActivityIndicator,
   Alert,
 } from "react-native";
@@ -24,6 +23,7 @@ import {
   SIZES,
 } from "../../utils/theme";
 import { authService } from "../../services/authService";
+import { ActionResultModal } from "../../components";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const img = require("../../assets/fpt_logo.png");
 import { AuthStackParamList } from "../../types/navigation";
@@ -185,37 +185,18 @@ const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
             </TouchableOpacity>
           </Animated.View>
 
-          <Modal
+          <ActionResultModal
             visible={modalVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={closeModal}
-          >
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalCard}>
-                <View style={styles.modalIcon}>
-                  <Text style={styles.modalIconText}>✅</Text>
-                </View>
-                <Text style={styles.modalTitle}>Đăng ký thành công</Text>
-                <Text style={styles.modalMessage}>{registerMessage}</Text>
-                <TouchableOpacity
-                  style={styles.modalButtonPrimary}
-                  onPress={() => {
-                    closeModal();
-                    navigation.navigate("Login");
-                  }}
-                >
-                  <Text style={styles.modalButtonPrimaryText}>Đăng nhập</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.modalButtonGhost}
-                  onPress={closeModal}
-                >
-                  <Text style={styles.modalButtonGhostText}>Đóng</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
+            type="success"
+            title="Đăng ký thành công!"
+            subtitle="Chào mừng bạn đến với FPTU Event"
+            message={registerMessage}
+            buttonText="Đăng nhập ngay"
+            onClose={() => {
+              closeModal();
+              navigation.navigate("Login");
+            }}
+          />
         </View>
       </LinearGradient>
     </View>

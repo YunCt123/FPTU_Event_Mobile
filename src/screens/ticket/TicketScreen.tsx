@@ -7,13 +7,13 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Alert,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { LinearGradient } from "expo-linear-gradient";
+import { ActionResultModal, ActionResultType } from "../../components";
 import { ticketService } from "../../services/ticketService";
 import { Ticket, TicketStatus } from "../../types/ticket";
 import { socketService, CheckinPayload } from "../../services/socketService";
@@ -44,6 +44,12 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Modal state
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<ActionResultType>("error");
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+
   const fetchTickets = useCallback(
     async (pageNum: number = 1, isRefresh: boolean = false) => {
       try {
@@ -63,7 +69,10 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
         setPage(pageNum);
       } catch (error) {
         console.error("Failed to fetch tickets", error);
-        Alert.alert("Lỗi", "Không thể tải danh sách vé");
+        setModalType("error");
+        setModalTitle("Lỗi!");
+        setModalMessage("Không thể tải danh sách vé. Vui lòng thử lại.");
+        setModalVisible(true);
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -189,64 +198,75 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
         end={{ x: 0.2, y: 1 }}
         style={styles.gradientBackground}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[COLORS.primary]}
-              tintColor={COLORS.primary}
-            />
-          }
-        >
-          {loading && !refreshing ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={COLORS.primary} />
-              <Text style={styles.loadingText}>Đang tải vé...</Text>
-            </View>
-          ) : (
-            <>
-              <View style={styles.header}>
-                <Text style={styles.title}>Vé của tôi</Text>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Vé của tôi</Text>
+          <View style={{ width: 40 }} />
+        </View>
 
-                {/* Tabs */}
-                <View style={styles.tabContainer}>
-                  <TouchableOpacity
+        {loading && !refreshing ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+            <Text style={styles.loadingText}>Đang tải vé...</Text>
+          </View>
+        ) : (
+          <>
+            {/* Tabs */}
+            <View style={styles.tabWrapper}>
+              <View style={styles.tabContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.tab,
+                    activeTab === "valid" && styles.tabActive,
+                  ]}
+                  onPress={() => setActiveTab("valid")}
+                >
+                  <Text
                     style={[
-                      styles.tab,
-                      activeTab === "valid" && styles.tabActive,
+                      styles.tabText,
+                      activeTab === "valid" && styles.tabTextActive,
                     ]}
-                    onPress={() => setActiveTab("valid")}
                   >
-                    <Text
-                      style={[
-                        styles.tabText,
-                        activeTab === "valid" && styles.tabTextActive,
-                      ]}
-                    >
-                      Có hiệu lực
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
+                    Có hiệu lực
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.tab,
+                    activeTab === "used" && styles.tabActive,
+                  ]}
+                  onPress={() => setActiveTab("used")}
+                >
+                  <Text
                     style={[
-                      styles.tab,
-                      activeTab === "used" && styles.tabActive,
+                      styles.tabText,
+                      activeTab === "used" && styles.tabTextActive,
                     ]}
-                    onPress={() => setActiveTab("used")}
                   >
-                    <Text
-                      style={[
-                        styles.tabText,
-                        activeTab === "used" && styles.tabTextActive,
-                      ]}
-                    >
-                      Đã sử dụng
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                    Đã sử dụng
+                  </Text>
+                </TouchableOpacity>
               </View>
+            </View>
+
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={[COLORS.primary]}
+                  tintColor={COLORS.primary}
+                />
+              }
+            >
               {filteredTickets.length === 0 ? (
                 <View style={styles.emptyContainer}>
                   <Ionicons
@@ -263,7 +283,9 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
                   {activeTab === "valid" && (
                     <TouchableOpacity
                       style={styles.browseButton}
-                      onPress={() => navigation.navigate("Event")}
+                      onPress={() => {
+                        navigation.navigate("Main", { screen: "Event" });
+                      }}
                     >
                       <Text style={styles.browseButtonText}>
                         Khám phá sự kiện
@@ -379,9 +401,18 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
                   ))}
                 </View>
               )}
-            </>
-          )}
-        </ScrollView>
+            </ScrollView>
+          </>
+        )}
+
+        {/* Action Result Modal */}
+        <ActionResultModal
+          visible={modalVisible}
+          type={modalType}
+          title={modalTitle}
+          message={modalMessage}
+          onClose={() => setModalVisible(false)}
+        />
       </LinearGradient>
     </View>
   );
@@ -406,14 +437,29 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: SPACING.screenPadding,
-    paddingTop: 60,
+    paddingTop: SPACING.xl + 20,
     paddingBottom: SPACING.md,
   },
-  title: {
-    fontSize: FONTS.header,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: RADII.xl,
+    backgroundColor: COLORS.white,
+    justifyContent: "center",
+    alignItems: "center",
+    ...SHADOWS.md,
+  },
+  headerTitle: {
+    fontSize: FONTS.xl,
     fontWeight: "bold",
     color: COLORS.text,
+  },
+  tabWrapper: {
+    paddingHorizontal: SPACING.screenPadding,
     marginBottom: SPACING.md,
   },
   tabContainer: {
@@ -440,14 +486,14 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 100,
+    paddingBottom: SPACING.xxxl,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: SPACING.screenPadding,
-    paddingTop: SPACING.huge * 2,
+    paddingVertical: SPACING.huge * 2,
   },
   emptyText: {
     fontSize: FONTS.bodyLarge,
@@ -467,8 +513,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   ticketsContainer: {
-    padding: SPACING.screenPadding,
-    gap: SPACING.lg,
+    paddingHorizontal: SPACING.screenPadding,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.md,
+    gap: SPACING.md,
   },
   ticketCard: {
     backgroundColor: COLORS.white,
