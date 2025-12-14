@@ -19,6 +19,7 @@ export type RootStackParamList = {
   MyEvents: undefined;
 
     // Ticket Screens
+    Ticket: undefined;
     TicketDetails: { ticketId: string };
     TicketQRCode: { ticketId: string };
     TicketHistory: undefined;
@@ -58,7 +59,7 @@ export type AuthStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Event: undefined;
-  Ticket: undefined;
+  Profile: undefined;
 };
 
 export type RootStackNavigationProp =

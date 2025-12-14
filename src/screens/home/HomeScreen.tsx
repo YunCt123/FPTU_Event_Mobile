@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,80 +8,81 @@ import {
   Image,
   ActivityIndicator,
 } from "react-native";
+import { User } from "../../types/user";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
-import FeaturedEventBanner, {
-  FeaturedEvent,
-} from "../../components/FeaturedEventBanner";
-import img from "../../assets/fpt_logo.png";
-import { STORAGE_KEYS } from "../../api/api";
+import FeaturedEventBanner from "../../components/FeaturedEventBanner";
 import { eventService } from "../../services/eventService";
 import { Event } from "../../types/event";
+import img from "../../assets/fpt_logo.png";
+import { STORAGE_KEYS } from "../../api/api";
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<any>;
 };
 
-// Helper function to convert Event to FeaturedEvent
-const convertToFeaturedEvent = (event: Event): FeaturedEvent => {
-  return {
-    id: event.id,
-    title: event.title,
-    subtitle: event.category || "Sự kiện",
-    gradientColors: COLORS.gradient_1,
-    date: new Date(event.startTime).toLocaleDateString('vi-VN'),
-    location: event.venue?.name || "Đang cập nhật",
-    attendees: event.registeredCount || 0,
-  };
-};
+const GRADIENT_COLORS = [
+  COLORS.gradient_2,
+  [COLORS.primary, "#FF8E53"],
+  ["#4CAF50", "#66BB6A"],
+] as const;
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [featuredEvents, setFeaturedEvents] = useState<FeaturedEvent[]>([]);
-  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadUserRole = async () => {
-      try {
-        const userStr = await AsyncStorage.getItem(STORAGE_KEYS.USER);
-        if (userStr) {
-          const user = JSON.parse(userStr);
-          setUserRole(user.roleName);
+  // Load user data when screen is focused (including after login)
+  useFocusEffect(
+    useCallback(() => {
+      const loadUser = async () => {
+        try {
+          const userStr = await AsyncStorage.getItem(STORAGE_KEYS.USER);
+          if (userStr) {
+            const user: User = JSON.parse(userStr);
+            setUserRole(user.roleName);
+            setUserAvatar(user.avatar || null);
+          }
+        } catch (error) {
+          console.error("Error loading user:", error);
         }
-      } catch (error) {
-        console.error("Error loading user role:", error);
-      }
-    };
+      };
 
-    loadUserRole();
-  }, []);
+      loadUser();
+    }, [])
+  );
 
   useEffect(() => {
     const loadEvents = async () => {
       try {
         setLoading(true);
-        // Lấy danh sách sự kiện với status PUBLISHED
         const response = await eventService.getEvents({
-          status: "PUBLISHED",
-          limit: 10,
+          page: 1,
+          limit: 50,
         });
-        
-        if (response.data && response.data.length > 0) {
-          // Chuyển đổi events cho featured banner (3 sự kiện đầu tiên)
-          const featured = response.data.slice(0, 3).map(convertToFeaturedEvent);
-          setFeaturedEvents(featured);
-          
-          // Lấy các sự kiện sắp tới (sắp xếp theo thời gian bắt đầu)
-          const upcoming = response.data
-            .filter(event => new Date(event.startTime) > new Date())
-            .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-            .slice(0, 2);
-          setUpcomingEvents(upcoming);
+
+        // Handle different response formats
+        let eventsData: Event[] = [];
+        if (Array.isArray(response)) {
+          eventsData = response;
+        } else if (
+          response &&
+          typeof response === "object" &&
+          "data" in response
+        ) {
+          eventsData = Array.isArray(response.data) ? response.data : [];
         }
+
+        // Filter only published events
+        const publishedEvents = eventsData.filter(
+          (event) => event.status === "PUBLISHED"
+        );
+        setEvents(publishedEvents);
       } catch (error) {
         console.error("Error loading events:", error);
       } finally {
@@ -92,16 +93,49 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     loadEvents();
   }, []);
 
-  const isStaff = userRole === "staff";
+  // Format date helper
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
 
-  if (loading) {
-    return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={{ color: COLORS.text, marginTop: SPACING.md }}>Đang tải sự kiện...</Text>
-      </View>
-    );
-  }
+  // Featured events: Top 3 events by registeredCount
+  const featuredEvents = useMemo(() => {
+    const sorted = [...events]
+      .sort((a, b) => b.registeredCount - a.registeredCount)
+      .slice(0, 3)
+      .map((event, index) => ({
+        id: event.id,
+        title: event.title,
+        subtitle: event.description
+          ? event.description.substring(0, 50) + "..."
+          : "",
+        gradientColors: GRADIENT_COLORS[index % GRADIENT_COLORS.length],
+        date: formatDate(event.startTime),
+        location: event.venue?.name || "Đang cập nhật",
+        attendees: event.registeredCount,
+      }));
+    return sorted;
+  }, [events]);
+
+  // Upcoming events: Next 2 events by startTime
+  const upcomingEvents = useMemo(() => {
+    const now = new Date();
+    const sorted = [...events]
+      .filter((event) => new Date(event.startTime) > now)
+      .sort(
+        (a, b) =>
+          new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+      )
+      .slice(0, 2);
+    return sorted;
+  }, [events]);
+
+  const isStaff = userRole === "staff";
 
   return (
     <View style={styles.container}>
@@ -124,11 +158,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   onPress={() => navigation.navigate("Profile")}
                   style={styles.avatar}
                 >
-                  <Ionicons
-                    name="person-circle"
-                    size={40}
-                    color={COLORS.text}
-                  />
+                  {userAvatar ? (
+                    <Image
+                      source={{ uri: userAvatar }}
+                      style={styles.avatarImage}
+                    />
+                  ) : (
+                    <View style={styles.avatarPlaceholder}>
+                      <Ionicons name="person" size={24} color={COLORS.white} />
+                    </View>
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
@@ -138,7 +177,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             {/* 2. Sự kiện Nổi bật - Thu hút đăng ký sự kiện mới */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Sự kiện Nổi bật</Text>
-              {featuredEvents.length > 0 ? (
+              {loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                </View>
+              ) : featuredEvents.length > 0 ? (
                 <FeaturedEventBanner
                   events={featuredEvents}
                   onEventPress={(event) => {
@@ -147,8 +190,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   autoPlayInterval={2000}
                 />
               ) : (
-                <View style={styles.emptyState}>
-                  <Text style={styles.emptyStateText}>Không có sự kiện nào</Text>
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>Chưa có sự kiện nổi bật</Text>
                 </View>
               )}
             </View>
@@ -162,28 +205,58 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 </TouchableOpacity>
               </View>
 
-              {upcomingEvents.length > 0 ? (
+              {loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                </View>
+              ) : upcomingEvents.length > 0 ? (
                 upcomingEvents.map((event) => {
                   const startDate = new Date(event.startTime);
                   const endDate = new Date(event.endTime);
-                  
+                  const day = startDate.getDate();
+                  const monthNames = [
+                    "Th1",
+                    "Th2",
+                    "Th3",
+                    "Th4",
+                    "Th5",
+                    "Th6",
+                    "Th7",
+                    "Th8",
+                    "Th9",
+                    "Th10",
+                    "Th11",
+                    "Th12",
+                  ];
+                  const month = monthNames[startDate.getMonth()];
+                  const startTime = startDate.toLocaleTimeString("vi-VN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+                  const endTime = endDate.toLocaleTimeString("vi-VN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+
                   return (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       key={event.id}
                       style={styles.upcomingCard}
-                      onPress={() => navigation.navigate("EventDetails", { eventId: event.id })}
+                      onPress={() =>
+                        navigation.navigate("EventDetails", {
+                          eventId: event.id,
+                        })
+                      }
                       activeOpacity={0.7}
                     >
                       <View style={styles.upcomingLeft}>
                         <View style={styles.upcomingDate}>
-                          <Text style={styles.upcomingDay}>{startDate.getDate()}</Text>
-                          <Text style={styles.upcomingMonth}>Th{startDate.getMonth() + 1}</Text>
+                          <Text style={styles.upcomingDay}>{day}</Text>
+                          <Text style={styles.upcomingMonth}>{month}</Text>
                         </View>
                       </View>
                       <View style={styles.upcomingContent}>
-                        <Text style={styles.upcomingTitle}>
-                          {event.title}
-                        </Text>
+                        <Text style={styles.upcomingTitle}>{event.title}</Text>
                         <View style={styles.upcomingDetail}>
                           <Ionicons
                             name="time-outline"
@@ -191,7 +264,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                             color={COLORS.text}
                           />
                           <Text style={styles.upcomingDetailText}>
-                            {startDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - {endDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                            {startTime} - {endTime}
                           </Text>
                         </View>
                         <View style={styles.upcomingDetail}>
@@ -200,7 +273,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                             size={14}
                             color={COLORS.text}
                           />
-                          <Text style={styles.upcomingDetailText}>{event.venue?.name || 'Đang cập nhật'}</Text>
+                          <Text style={styles.upcomingDetailText}>
+                            {event.venue?.name || "Đang cập nhật"}
+                          </Text>
                         </View>
                       </View>
                       <View style={styles.upcomingAction}>
@@ -214,8 +289,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   );
                 })
               ) : (
-                <View style={styles.emptyState}>
-                  <Text style={styles.emptyStateText}>Không có sự kiện sắp diễn ra</Text>
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>
+                    Không có sự kiện sắp diễn ra
+                  </Text>
                 </View>
               )}
             </View>
@@ -223,7 +300,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             {/* 4. Quick Actions - Lối tắt cho các tác vụ thường xuyên */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Thao tác nhanh</Text>
-              
+
               {/* Staff Quick Access */}
               {isStaff && (
                 <TouchableOpacity
@@ -280,17 +357,33 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   <Text style={styles.actionText}>Đăng ký{"\n"}sự kiện</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
-                  style={styles.actionCard}
-                  onPress={() => navigation.navigate("Ticket")}
-                >
-                  <View style={styles.actionIcon}>
-                    <Ionicons name="qr-code" size={28} color={COLORS.primary} />
-                  </View>
-                  <Text style={styles.actionText}>Vé của tôi</Text>
-                </TouchableOpacity>
+                {isStaff ? (
+                  <TouchableOpacity
+                    style={styles.actionCard}
+                    onPress={() => navigation.navigate("IncidentHistory")}
+                  >
+                    <View style={styles.actionIcon}>
+                      <Ionicons name="list" size={28} color={COLORS.primary} />
+                    </View>
+                    <Text style={styles.actionText}>Xem sự cố</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.actionCard}
+                    onPress={() => navigation.navigate("Ticket")}
+                  >
+                    <View style={styles.actionIcon}>
+                      <Ionicons
+                        name="qr-code"
+                        size={28}
+                        color={COLORS.primary}
+                      />
+                    </View>
+                    <Text style={styles.actionText}>Vé của tôi</Text>
+                  </TouchableOpacity>
+                )}
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.actionCard}
                   onPress={() => navigation.navigate("Profile")}
                 >
@@ -338,6 +431,23 @@ const styles = StyleSheet.create({
   avatar: {
     position: "absolute",
     right: 0,
+  },
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: COLORS.white,
+  },
+  avatarPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: COLORS.white,
+    backgroundColor: COLORS.primary,
+    justifyContent: "center",
+    alignItems: "center",
   },
   content: {
     paddingHorizontal: SPACING.screenPadding,
@@ -488,14 +598,17 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     marginTop: SPACING.xs,
   },
-  emptyState: {
-    backgroundColor: COLORS.white,
-    borderRadius: RADII.card,
-    padding: SPACING.xl,
+  loadingContainer: {
+    paddingVertical: SPACING.xl,
     alignItems: "center",
-    ...SHADOWS.sm,
+    justifyContent: "center",
   },
-  emptyStateText: {
+  emptyContainer: {
+    paddingVertical: SPACING.xl,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
     fontSize: FONTS.body,
     color: COLORS.text,
     opacity: 0.5,
