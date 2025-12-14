@@ -12,9 +12,13 @@ export const API_CONFIG = {
 export const AUTH_ENDPOINTS = {
   REGISTER: "/auth/register",
   LOGIN: "/auth/login",
-  REFRESH: "/auth/refresh",
+  REFRESH: "auth/refresh",
   GOOGLE: "auth/google",
   GOOGLE_CALLBACK: "auth/google/callback",
+  FORGOT_PASSWORD: "/auth/forgot-password",
+  VERIFY_OTP: "/auth/verify-otp",
+  RESET_PASSWORD: "/auth/reset-password",
+  CHANGE_PASSWORD: "/auth/change-password",
 };
 
 export const USER_ENDPOINTS = {
