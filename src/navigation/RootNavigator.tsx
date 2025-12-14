@@ -13,6 +13,7 @@ import { STORAGE_KEYS } from "../api/api";
 import ProfileScreen from "../screens/profile/ProfileScreen";
 import PersonalInfoScreen from "../screens/profile/PersonalInfoScreen";
 import EventDetailScreen from "../screens/event/EventDetailScreen";
+import TicketScreen from "../screens/ticket/TicketScreen";
 import TicketDetailScreen from "../screens/ticket/TicketDetailScreen";
 import TicketQRCodeScreen from "../screens/ticket/TicketQRCodeScreen";
 import TicketHistoryScreen from "../screens/ticket/TicketHistoryScreen";
@@ -121,6 +122,7 @@ const RootNavigator: React.FC = () => {
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
         <Stack.Screen name="EventDetails" component={EventDetailScreen} />
+        <Stack.Screen name="Ticket" component={TicketScreen} />
         <Stack.Screen name="TicketDetails" component={TicketDetailScreen} />
         <Stack.Screen name="TicketQRCode" component={TicketQRCodeScreen} />
         <Stack.Screen name="TicketHistory" component={TicketHistoryScreen} />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -6,7 +6,9 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  ActivityIndicator,
 } from "react-native";
+import { User } from "../../types/user";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,6 +17,8 @@ import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import FeaturedEventBanner, {
   FeaturedEvent,
 } from "../../components/FeaturedEventBanner";
+import { eventService } from "../../services/eventService";
+import { Event } from "../../types/event";
 import img from "../../assets/fpt_logo.png";
 import { STORAGE_KEYS } from "../../api/api";
 
@@ -22,54 +26,110 @@ type HomeScreenProps = {
   navigation: NativeStackNavigationProp<any>;
 };
 
-const FEATURED_EVENTS: FeaturedEvent[] = [
-  {
-    id: "1",
-    title: "FPT Tech Day 2025",
-    subtitle: "Hội thảo công nghệ lớn nhất năm",
-    gradientColors: COLORS.gradient_2,
-    date: "25/12/2025",
-    location: "Hall A - Beta Building",
-    attendees: 500,
-  },
-  {
-    id: "2",
-    title: "Club Day: Welcome K19",
-    subtitle: "Ngày hội sinh viên sôi động",
-    color: COLORS.primary,
-    date: "10/01/2026",
-    location: "Main Campus",
-    attendees: 300,
-  },
-  {
-    id: "3",
-    title: "F-Talent Show",
-    subtitle: "Sân chơi tài năng sinh viên FPT",
-    color: "#4CAF50",
-    date: "15/02/2026",
-    location: "FPT Arena",
-    attendees: 250,
-  },
-];
+const GRADIENT_COLORS = [
+  COLORS.gradient_2,
+  [COLORS.primary, "#FF8E53"],
+  ["#4CAF50", "#66BB6A"],
+] as const;
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadUserRole = async () => {
+    const loadUser = async () => {
       try {
         const userStr = await AsyncStorage.getItem(STORAGE_KEYS.USER);
         if (userStr) {
-          const user = JSON.parse(userStr);
+          const user: User = JSON.parse(userStr);
           setUserRole(user.roleName);
+          setUserAvatar(user.avatar || null);
         }
       } catch (error) {
-        console.error("Error loading user role:", error);
+        console.error("Error loading user:", error);
       }
     };
 
-    loadUserRole();
+    loadUser();
   }, []);
+
+  useEffect(() => {
+    const loadEvents = async () => {
+      try {
+        setLoading(true);
+        const response = await eventService.getEvents({
+          page: 1,
+          limit: 50, // Load nhiều để có đủ dữ liệu
+        });
+
+        // Handle different response formats
+        let eventsData: Event[] = [];
+        if (Array.isArray(response)) {
+          eventsData = response;
+        } else if (
+          response &&
+          typeof response === "object" &&
+          "data" in response
+        ) {
+          eventsData = Array.isArray(response.data) ? response.data : [];
+        }
+
+        // Filter only published events
+        const publishedEvents = eventsData.filter(
+          (event) => event.status === "PUBLISHED"
+        );
+        setEvents(publishedEvents);
+      } catch (error) {
+        console.error("Error loading events:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEvents();
+  }, []);
+
+  // Format date helper
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  // Featured events: Top 3 events by registeredCount
+  const featuredEvents = useMemo(() => {
+    const sorted = [...events]
+      .sort((a, b) => b.registeredCount - a.registeredCount)
+      .slice(0, 3)
+      .map((event, index) => ({
+        id: event.id,
+        title: event.title,
+        subtitle: event.description?.substring(0, 50) + "..." || "",
+        gradientColors: GRADIENT_COLORS[index % GRADIENT_COLORS.length],
+        date: formatDate(event.startTime),
+        location: event.venue?.name || "Đang cập nhật",
+        attendees: event.registeredCount,
+      }));
+    return sorted;
+  }, [events]);
+
+  // Upcoming events: Next 2 events by startTime
+  const upcomingEvents = useMemo(() => {
+    const now = new Date();
+    const sorted = [...events]
+      .filter((event) => new Date(event.startTime) > now)
+      .sort(
+        (a, b) =>
+          new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+      )
+      .slice(0, 2);
+    return sorted;
+  }, [events]);
 
   const isStaff = userRole === "staff";
 
@@ -94,11 +154,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   onPress={() => navigation.navigate("Profile")}
                   style={styles.avatar}
                 >
-                  <Ionicons
-                    name="person-circle"
-                    size={40}
-                    color={COLORS.text}
-                  />
+                  {userAvatar ? (
+                    <Image
+                      source={{ uri: userAvatar }}
+                      style={styles.avatarImage}
+                    />
+                  ) : (
+                    <Ionicons
+                      name="person-circle"
+                      size={40}
+                      color={COLORS.text}
+                    />
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
@@ -108,14 +175,23 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             {/* 2. Sự kiện Nổi bật - Thu hút đăng ký sự kiện mới */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Sự kiện Nổi bật</Text>
-              <FeaturedEventBanner
-                events={FEATURED_EVENTS}
-                onEventPress={(event) => {
-                  console.log("Event pressed:", event.title);
-                  navigation.navigate("EventDetails", { eventId: event.id });
-                }}
-                autoPlayInterval={2000}
-              />
+              {loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                </View>
+              ) : featuredEvents.length > 0 ? (
+                <FeaturedEventBanner
+                  events={featuredEvents}
+                  onEventPress={(event) => {
+                    navigation.navigate("EventDetails", { eventId: event.id });
+                  }}
+                  autoPlayInterval={2000}
+                />
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>Chưa có sự kiện nổi bật</Text>
+                </View>
+              )}
             </View>
 
             {/* 3. Sự kiện Sắp diễn ra - Nhắc nhở/giúp người dùng quản lý thời gian */}
@@ -127,93 +203,102 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 </TouchableOpacity>
               </View>
 
-              <TouchableOpacity 
-                style={styles.upcomingCard}
-                onPress={() => navigation.navigate("EventDetails", { eventId: "1" })}
-                activeOpacity={0.7}
-              >
-                <View style={styles.upcomingLeft}>
-                  <View style={styles.upcomingDate}>
-                    <Text style={styles.upcomingDay}>15</Text>
-                    <Text style={styles.upcomingMonth}>Th12</Text>
-                  </View>
+              {loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color={COLORS.primary} />
                 </View>
-                <View style={styles.upcomingContent}>
-                  <Text style={styles.upcomingTitle}>
-                    Tech Talk: AI in Education
-                  </Text>
-                  <View style={styles.upcomingDetail}>
-                    <Ionicons
-                      name="time-outline"
-                      size={14}
-                      color={COLORS.text}
-                    />
-                    <Text style={styles.upcomingDetailText}>14:00 - 16:00</Text>
-                  </View>
-                  <View style={styles.upcomingDetail}>
-                    <Ionicons
-                      name="location-outline"
-                      size={14}
-                      color={COLORS.text}
-                    />
-                    <Text style={styles.upcomingDetailText}>Hall A</Text>
-                  </View>
-                </View>
-                <View style={styles.upcomingAction}>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={20}
-                    color={COLORS.primary}
-                  />
-                </View>
-              </TouchableOpacity>
+              ) : upcomingEvents.length > 0 ? (
+                upcomingEvents.map((event) => {
+                  const startDate = new Date(event.startTime);
+                  const endDate = new Date(event.endTime);
+                  const day = startDate.getDate();
+                  const monthNames = [
+                    "Th1",
+                    "Th2",
+                    "Th3",
+                    "Th4",
+                    "Th5",
+                    "Th6",
+                    "Th7",
+                    "Th8",
+                    "Th9",
+                    "Th10",
+                    "Th11",
+                    "Th12",
+                  ];
+                  const month = monthNames[startDate.getMonth()];
+                  const startTime = startDate.toLocaleTimeString("vi-VN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+                  const endTime = endDate.toLocaleTimeString("vi-VN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
 
-              <TouchableOpacity 
-                style={styles.upcomingCard}
-                onPress={() => navigation.navigate("EventDetails", { eventId: "2" })}
-                activeOpacity={0.7}
-              >
-                <View style={styles.upcomingLeft}>
-                  <View style={styles.upcomingDate}>
-                    <Text style={styles.upcomingDay}>18</Text>
-                    <Text style={styles.upcomingMonth}>Th12</Text>
-                  </View>
-                </View>
-                <View style={styles.upcomingContent}>
-                  <Text style={styles.upcomingTitle}>
-                    Workshop: UI/UX Design
+                  return (
+                    <TouchableOpacity
+                      key={event.id}
+                      style={styles.upcomingCard}
+                      onPress={() =>
+                        navigation.navigate("EventDetails", {
+                          eventId: event.id,
+                        })
+                      }
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.upcomingLeft}>
+                        <View style={styles.upcomingDate}>
+                          <Text style={styles.upcomingDay}>{day}</Text>
+                          <Text style={styles.upcomingMonth}>{month}</Text>
+                        </View>
+                      </View>
+                      <View style={styles.upcomingContent}>
+                        <Text style={styles.upcomingTitle}>{event.title}</Text>
+                        <View style={styles.upcomingDetail}>
+                          <Ionicons
+                            name="time-outline"
+                            size={14}
+                            color={COLORS.text}
+                          />
+                          <Text style={styles.upcomingDetailText}>
+                            {startTime} - {endTime}
+                          </Text>
+                        </View>
+                        <View style={styles.upcomingDetail}>
+                          <Ionicons
+                            name="location-outline"
+                            size={14}
+                            color={COLORS.text}
+                          />
+                          <Text style={styles.upcomingDetailText}>
+                            {event.venue?.name || "Đang cập nhật"}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.upcomingAction}>
+                        <Ionicons
+                          name="chevron-forward"
+                          size={20}
+                          color={COLORS.primary}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>
+                    Không có sự kiện sắp diễn ra
                   </Text>
-                  <View style={styles.upcomingDetail}>
-                    <Ionicons
-                      name="time-outline"
-                      size={14}
-                      color={COLORS.text}
-                    />
-                    <Text style={styles.upcomingDetailText}>09:00 - 12:00</Text>
-                  </View>
-                  <View style={styles.upcomingDetail}>
-                    <Ionicons
-                      name="location-outline"
-                      size={14}
-                      color={COLORS.text}
-                    />
-                    <Text style={styles.upcomingDetailText}>Room 301</Text>
-                  </View>
                 </View>
-                <View style={styles.upcomingAction}>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={20}
-                    color={COLORS.primary}
-                  />
-                </View>
-              </TouchableOpacity>
+              )}
             </View>
 
             {/* 4. Quick Actions - Lối tắt cho các tác vụ thường xuyên */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Thao tác nhanh</Text>
-              
+
               {/* Staff Quick Access */}
               {isStaff && (
                 <TouchableOpacity
@@ -270,17 +355,39 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   <Text style={styles.actionText}>Đăng ký{"\n"}sự kiện</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
-                  style={styles.actionCard}
-                  onPress={() => navigation.navigate("Ticket")}
-                >
-                  <View style={styles.actionIcon}>
-                    <Ionicons name="qr-code" size={28} color={COLORS.primary} />
-                  </View>
-                  <Text style={styles.actionText}>Vé của tôi</Text>
-                </TouchableOpacity>
+                {isStaff ? (
+                  <>
+                    <TouchableOpacity
+                      style={styles.actionCard}
+                      onPress={() => navigation.navigate("IncidentHistory")}
+                    >
+                      <View style={styles.actionIcon}>
+                        <Ionicons
+                          name="list"
+                          size={28}
+                          color={COLORS.primary}
+                        />
+                      </View>
+                      <Text style={styles.actionText}>Xem sự cố</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.actionCard}
+                    onPress={() => navigation.navigate("Ticket")}
+                  >
+                    <View style={styles.actionIcon}>
+                      <Ionicons
+                        name="qr-code"
+                        size={28}
+                        color={COLORS.primary}
+                      />
+                    </View>
+                    <Text style={styles.actionText}>Vé của tôi</Text>
+                  </TouchableOpacity>
+                )}
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.actionCard}
                   onPress={() => navigation.navigate("Profile")}
                 >
@@ -328,6 +435,13 @@ const styles = StyleSheet.create({
   avatar: {
     position: "absolute",
     right: 0,
+  },
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: COLORS.white,
   },
   content: {
     paddingHorizontal: SPACING.screenPadding,
@@ -477,6 +591,21 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     opacity: 0.9,
     marginTop: SPACING.xs,
+  },
+  loadingContainer: {
+    paddingVertical: SPACING.xl,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyContainer: {
+    paddingVertical: SPACING.xl,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
+    fontSize: FONTS.body,
+    color: COLORS.text,
+    opacity: 0.5,
   },
 });
 

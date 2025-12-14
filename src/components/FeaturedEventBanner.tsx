@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,10 +8,10 @@ import {
   ScrollView,
   NativeSyntheticEvent,
   NativeScrollEvent,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, FONTS, RADII, SHADOWS } from '../utils/theme';
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../utils/theme";
 
 export interface FeaturedEvent {
   id: string;
@@ -30,7 +30,7 @@ interface Props {
   autoPlayInterval?: number;
 }
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get("window");
 const CARD_WIDTH = screenWidth - SPACING.screenPadding * 2;
 const CARD_MARGIN = SPACING.md;
 
@@ -126,7 +126,12 @@ export const FeaturedEventBanner: React.FC<Props> = ({
                 {renderCardContent(event)}
               </LinearGradient>
             ) : (
-              <View style={[styles.card, { backgroundColor: event.color || COLORS.primary }]}>
+              <View
+                style={[
+                  styles.card,
+                  { backgroundColor: event.color || COLORS.primary },
+                ]}
+              >
                 {renderCardContent(event)}
               </View>
             )}
@@ -168,7 +173,7 @@ const renderCardContent = (event: FeaturedEvent) => (
       <Text style={styles.title} numberOfLines={2}>
         {event.title}
       </Text>
-      
+
       {event.subtitle && (
         <Text style={styles.subtitle} numberOfLines={2}>
           {event.subtitle}
@@ -181,7 +186,7 @@ const renderCardContent = (event: FeaturedEvent) => (
           <Ionicons name="calendar-outline" size={16} color={COLORS.white} />
           <Text style={styles.infoText}>{event.date}</Text>
         </View>
-        
+
         {event.location && (
           <View style={styles.infoItem}>
             <Ionicons name="location-outline" size={16} color={COLORS.white} />
@@ -205,7 +210,7 @@ const renderCardContent = (event: FeaturedEvent) => (
     {/* CTA Button */}
     <View style={styles.ctaContainer}>
       <View style={styles.ctaButton}>
-        <Text style={styles.ctaText}>Xem chi tiết</Text>
+        <Text style={styles.ctaText}>Chi tiết</Text>
         <Ionicons name="arrow-forward" size={16} color={COLORS.white} />
       </View>
     </View>
@@ -227,26 +232,26 @@ const styles = StyleSheet.create({
   firstCard: {
     marginLeft: -14,
   },
-  lastCard: {
-  },
+  lastCard: {},
   card: {
     height: 200,
     borderRadius: RADII.card,
-    overflow: 'hidden',
+    overflow: "hidden",
     ...SHADOWS.lg,
   },
   cardContent: {
     flex: 1,
     padding: SPACING.lg,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   badgeContainer: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
+    marginBottom: SPACING.md,
   },
   badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
     paddingHorizontal: SPACING.sm,
     paddingVertical: SPACING.xs,
     borderRadius: RADII.pill,
@@ -254,20 +259,20 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: FONTS.caption,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.white,
     letterSpacing: 0.5,
   },
   contentContainer: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     gap: SPACING.sm,
   },
   title: {
     fontSize: FONTS.title,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: COLORS.white,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
@@ -277,40 +282,40 @@ const styles = StyleSheet.create({
     opacity: 0.95,
   },
   infoRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: SPACING.md,
     marginTop: SPACING.xs,
   },
   infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
-    maxWidth: '48%',
+    maxWidth: "48%",
   },
   infoText: {
     fontSize: FONTS.caption,
     color: COLORS.white,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   attendeesContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     marginTop: SPACING.xs,
   },
   attendeesText: {
     fontSize: FONTS.caption,
     color: COLORS.white,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   ctaContainer: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   ctaButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     borderRadius: RADII.button,
@@ -318,13 +323,13 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontSize: FONTS.body,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.white,
   },
   pagination: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     gap: SPACING.sm,
     marginTop: SPACING.md,
   },

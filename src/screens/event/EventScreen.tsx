@@ -13,9 +13,13 @@ import {
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { eventService } from "../../services/eventService";
+import { staffService } from "../../services/staffService";
 import { Event, EventStatus } from "../../types/event";
+import { StaffAssignedEvent } from "../../types/staff";
+import { STORAGE_KEYS } from "../../api/api";
 
 type EventScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -39,19 +43,46 @@ const STATUS_COLORS: Record<EventStatus, string> = {
 const DEFAULT_PAGE_SIZE = 10;
 
 const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("Tất cả");
   const [searchQuery, setSearchQuery] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [assignedEvents, setAssignedEvents] = useState<StaffAssignedEvent[]>(
+    []
+  );
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const isStaff = userRole === "staff";
+
+  // Load user role on mount
+  useEffect(() => {
+    const loadUserRole = async () => {
+      try {
+        const userStr = await AsyncStorage.getItem(STORAGE_KEYS.USER);
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          console.log("User role loaded:", user.roleName);
+          setUserRole(user.roleName);
+        } else {
+          console.log("No user found in storage");
+        }
+      } catch (error) {
+        console.error("Error loading user role:", error);
+      }
+    };
+    loadUserRole();
+  }, []);
+
   const categoryOptions = useMemo(() => {
+    const sourceEvents = isStaff ? assignedEvents : events;
+
     const dynamicCategories = Array.from(
       new Set(
-        events
+        sourceEvents
           .map((event) => event.category)
           .filter((category): category is string => Boolean(category))
       )
@@ -62,7 +93,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
     }
 
     return ["Tất cả", ...dynamicCategories];
-  }, [events]);
+  }, [events, assignedEvents, isStaff]);
 
   const fetchEvents = useCallback(
     async (searchValue: string, isRefresh: boolean = false) => {
@@ -73,37 +104,123 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
           setLoading(true);
         }
         setErrorMessage(null);
-        const params: {
-          search?: string;
-          page: number;
-          limit: number;
-        } = {
-          page,
-          limit: DEFAULT_PAGE_SIZE,
-        };
 
-        const trimmedSearch = searchValue.trim();
-        if (trimmedSearch) {
-          params.search = trimmedSearch;
+        if (isStaff) {
+          // Fetch assigned events for staff
+          console.log("Fetching assigned events for staff");
+          try {
+            const assignedEvents = await staffService.getAssignedEvents();
+            console.log("Assigned events response:", assignedEvents);
+
+            if (Array.isArray(assignedEvents)) {
+              setAssignedEvents(assignedEvents);
+            } else if (
+              assignedEvents &&
+              typeof assignedEvents === "object" &&
+              "data" in assignedEvents
+            ) {
+              const data = (assignedEvents as any).data;
+              setAssignedEvents(Array.isArray(data) ? data : []);
+            } else {
+              console.warn(
+                "Unexpected assigned events format:",
+                assignedEvents
+              );
+              setAssignedEvents([]);
+            }
+          } catch (staffError: any) {
+            console.error("Error fetching assigned events:", staffError);
+            setAssignedEvents([]);
+            throw staffError;
+          }
+        } else {
+          // Fetch events for students
+          const params: {
+            search?: string;
+            page: number;
+            limit: number;
+          } = {
+            page,
+            limit: DEFAULT_PAGE_SIZE,
+          };
+
+          const trimmedSearch = searchValue.trim();
+          if (trimmedSearch) {
+            params.search = trimmedSearch;
+          }
+
+          console.log("Fetching events for student with params:", params);
+          const response = await eventService.getEvents(params);
+          console.log("Events response:", response);
+
+          // Handle different response formats
+          if (Array.isArray(response)) {
+            setEvents(response);
+          } else if (
+            response &&
+            typeof response === "object" &&
+            "data" in response
+          ) {
+            setEvents(Array.isArray(response.data) ? response.data : []);
+          } else {
+            console.warn("Unexpected response format:", response);
+            setEvents([]);
+          }
         }
-
-        const response = await eventService.getEvents(params);
-        setEvents(response.data ?? []);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to fetch events", error);
-        setErrorMessage("Không thể tải danh sách sự kiện");
-        Alert.alert("Lỗi", "Không thể tải danh sách sự kiện");
+        setErrorMessage(
+          isStaff
+            ? "Không thể tải danh sách sự kiện được phân công"
+            : "Không thể tải danh sách sự kiện"
+        );
+        // Only show alert if it's not a silent error
+        if (
+          error?.response?.status !== 401 &&
+          error?.response?.status !== 403
+        ) {
+          Alert.alert(
+            "Lỗi",
+            error.response?.data?.message ||
+              (isStaff
+                ? "Không thể tải danh sách sự kiện được phân công"
+                : "Không thể tải danh sách sự kiện")
+          );
+        }
       } finally {
+        console.log("Setting loading to false");
         setLoading(false);
         setRefreshing(false);
       }
     },
-    [page]
+    [page, isStaff]
   );
 
+  // Fetch events when userRole is first set
   useEffect(() => {
-    fetchEvents(appliedSearch);
-  }, [fetchEvents, appliedSearch]);
+    if (userRole !== null) {
+      console.log(
+        "User role is set, fetching events. Role:",
+        userRole,
+        "isStaff:",
+        isStaff
+      );
+      fetchEvents(appliedSearch);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userRole]); // Only depend on userRole to avoid infinite loop
+
+  // Fetch events when search changes (but only after initial load)
+  useEffect(() => {
+    if (userRole !== null && appliedSearch !== "") {
+      console.log(
+        "Search changed, fetching events with search:",
+        appliedSearch
+      );
+      fetchEvents(appliedSearch);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appliedSearch]);
 
   const onRefresh = useCallback(() => {
     fetchEvents(appliedSearch, true);
@@ -114,14 +231,33 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
     setAppliedSearch(searchQuery);
   };
 
-  const filteredEvents = events.filter((event) => {
-    const matchCategory =
-      selectedCategory === "Tất cả" || event.category === selectedCategory;
-    const matchSearch = event.title
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    return matchCategory && matchSearch;
-  });
+  const filteredEvents = useMemo(() => {
+    const sourceEvents = isStaff ? assignedEvents : events;
+    console.log(
+      "Filtering events - sourceEvents count:",
+      sourceEvents.length,
+      "isStaff:",
+      isStaff
+    );
+    console.log(
+      "Filter params - category:",
+      selectedCategory,
+      "searchQuery:",
+      searchQuery
+    );
+
+    const filtered = sourceEvents.filter((event) => {
+      const matchCategory =
+        selectedCategory === "Tất cả" || event.category === selectedCategory;
+      const matchSearch = event.title
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+      return matchCategory && matchSearch;
+    });
+
+    console.log("Filtered events count:", filtered.length);
+    return filtered;
+  }, [events, assignedEvents, selectedCategory, searchQuery, isStaff]);
 
   const formatDate = (value: string) => {
     const date = new Date(value);
@@ -138,6 +274,29 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "PUBLISHED":
+        return COLORS.success;
+      case "DRAFT":
+        return COLORS.warning;
+      case "CANCELLED":
+        return COLORS.error;
+      case "PENDING":
+        return "#2196F3";
+      default:
+        return COLORS.text;
+    }
+  };
+
+  const handleEventPress = (event: Event | StaffAssignedEvent) => {
+    if (isStaff) {
+      navigation.navigate("StaffEventDetail", { eventId: event.id });
+    } else {
+      navigation.navigate("EventDetails", { eventId: event.id });
+    }
   };
 
   return (
@@ -161,58 +320,117 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
           }
         >
           <View style={styles.header}>
-            <Text style={styles.title}>Sự kiện</Text>
+            {isStaff ? (
+              <>
+                <Text style={styles.title}>Sự kiện được phân công</Text>
 
-            {/* Search Bar */}
-            <View style={styles.searchContainer}>
-              <Ionicons
-                name="search"
-                size={20}
-                color={COLORS.text}
-                style={{ opacity: 0.5 }}
-              />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Tìm kiếm sự kiện..."
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                onSubmitEditing={handleSearchSubmit}
-                returnKeyType="search"
-              />
-            </View>
+                {/* Search Bar */}
+                <View style={styles.searchContainer}>
+                  <Ionicons
+                    name="search"
+                    size={20}
+                    color={COLORS.text}
+                    style={{ opacity: 0.5 }}
+                  />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Tìm kiếm sự kiện..."
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    onSubmitEditing={handleSearchSubmit}
+                    returnKeyType="search"
+                  />
+                </View>
 
-            {/* Categories */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.categoriesContainer}
-            >
-              {categoryOptions.map((category) => {
-                const isActive = selectedCategory === category;
-                return (
-                  <TouchableOpacity
-                    key={category}
-                    style={[
-                      styles.categoryChip,
-                      isActive && styles.categoryChipActive,
-                    ]}
-                    onPress={() => {
-                      setSelectedCategory(category);
-                      setPage(1);
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.categoryText,
-                        isActive && styles.categoryTextActive,
-                      ]}
-                    >
-                      {category}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
+                {/* Categories */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.categoriesContainer}
+                >
+                  {categoryOptions.map((category) => {
+                    const isActive = selectedCategory === category;
+                    return (
+                      <TouchableOpacity
+                        key={category}
+                        style={[
+                          styles.categoryChip,
+                          isActive && styles.categoryChipActive,
+                        ]}
+                        onPress={() => {
+                          setSelectedCategory(category);
+                          setPage(1);
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.categoryText,
+                            isActive && styles.categoryTextActive,
+                          ]}
+                        >
+                          {category}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </>
+            ) : (
+              <>
+                <Text style={styles.title}>Sự kiện</Text>
+
+                {/* Search Bar */}
+                <View style={styles.searchContainer}>
+                  <Ionicons
+                    name="search"
+                    size={20}
+                    color={COLORS.text}
+                    style={{ opacity: 0.5 }}
+                  />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Tìm kiếm sự kiện..."
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    onSubmitEditing={handleSearchSubmit}
+                    returnKeyType="search"
+                  />
+                </View>
+
+                {/* Categories */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.categoriesContainer}
+                >
+                  {categoryOptions.map((category) => {
+                    const isActive = selectedCategory === category;
+                    return (
+                      <TouchableOpacity
+                        key={category}
+                        style={[
+                          styles.categoryChip,
+                          isActive && styles.categoryChipActive,
+                        ]}
+                        onPress={() => {
+                          setSelectedCategory(category);
+                          setPage(1);
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.categoryText,
+                            isActive && styles.categoryTextActive,
+                          ]}
+                        >
+                          {category}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </>
+            )}
           </View>
 
           <View style={styles.eventsContainer}>
@@ -223,7 +441,11 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
             {loading ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={COLORS.primary} />
-                <Text style={styles.loadingText}>Đang tải sự kiện...</Text>
+                <Text style={styles.loadingText}>
+                  {isStaff
+                    ? "Đang tải danh sách sự kiện..."
+                    : "Đang tải sự kiện..."}
+                </Text>
               </View>
             ) : filteredEvents.length === 0 ? (
               <View style={styles.emptyContainer}>
@@ -233,17 +455,130 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
                   color={COLORS.text}
                   style={{ opacity: 0.25 }}
                 />
-                <Text style={styles.emptyText}>Không có sự kiện nào</Text>
+                <Text style={styles.emptyText}>
+                  {isStaff
+                    ? "Bạn chưa được phân công vào sự kiện nào"
+                    : "Không có sự kiện nào"}
+                </Text>
               </View>
+            ) : isStaff ? (
+              // Staff view
+              filteredEvents.map((event) => (
+                <TouchableOpacity
+                  key={event.id}
+                  style={styles.staffEventCard}
+                  onPress={() => handleEventPress(event)}
+                >
+                  <View style={styles.staffEventHeader}>
+                    <View style={styles.staffEventTitleContainer}>
+                      <Text style={styles.staffEventTitle} numberOfLines={2}>
+                        {event.title}
+                      </Text>
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          { backgroundColor: getStatusColor(event.status) },
+                        ]}
+                      >
+                        <Text style={styles.statusText}>{event.status}</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.staffEventInfo}>
+                    <View style={styles.infoRow}>
+                      <Ionicons
+                        name="location-sharp"
+                        size={16}
+                        color={COLORS.text}
+                      />
+                      <Text style={styles.infoText} numberOfLines={1}>
+                        {event.venue?.name ?? "Đang cập nhật"}
+                      </Text>
+                    </View>
+
+                    <View style={styles.infoRow}>
+                      <Ionicons name="calendar" size={16} color={COLORS.text} />
+                      <Text style={styles.infoText}>
+                        {formatDate(event.startTime)} -{" "}
+                        {formatTime(event.startTime)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.infoRow}>
+                      <Ionicons name="people" size={16} color={COLORS.text} />
+                      <Text style={styles.infoText}>
+                        {event.registeredCount}/{event.maxCapacity} người tham
+                        gia
+                      </Text>
+                    </View>
+
+                    <View style={styles.divider} />
+
+                    <View style={styles.assignmentInfo}>
+                      <View style={styles.roleBadge}>
+                        <Ionicons
+                          name="shield-checkmark"
+                          size={14}
+                          color={COLORS.primary}
+                        />
+                        <Text style={styles.roleText}>Check-in Staff</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.cardFooter}>
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={() =>
+                        navigation.navigate("StaffScan", {
+                          eventId: event.id,
+                          eventTitle: event.title,
+                        })
+                      }
+                    >
+                      <Ionicons
+                        name="create"
+                        size={20}
+                        color={COLORS.primary}
+                      />
+                      <Text style={styles.actionButtonText}>Check-in</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={() =>
+                        navigation.navigate("IncidentReport", {
+                          eventId: event.id,
+                          eventTitle: event.title,
+                        })
+                      }
+                    >
+                      <Ionicons
+                        name="warning"
+                        size={20}
+                        color={COLORS.warning}
+                      />
+                      <Text
+                        style={[
+                          styles.actionButtonText,
+                          { color: COLORS.warning },
+                        ]}
+                      >
+                        Báo cáo
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </TouchableOpacity>
+              ))
             ) : (
+              // Student view
               filteredEvents.map((event) => (
                 <TouchableOpacity
                   key={event.id}
                   style={styles.eventCard}
                   activeOpacity={0.7}
-                  onPress={() =>
-                    navigation.navigate("EventDetails", { eventId: event.id })
-                  }
+                  onPress={() => handleEventPress(event)}
                 >
                   <View style={styles.eventHeader}>
                     <View style={styles.eventIconContainer}>
@@ -328,9 +663,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
                   </View>
 
                   <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate("EventDetails", { eventId: event.id })
-                    }
+                    onPress={() => handleEventPress(event)}
                     style={styles.registerButton}
                   >
                     <Text style={styles.registerButtonText}>Xem chi tiết</Text>
@@ -523,6 +856,117 @@ const styles = StyleSheet.create({
     fontSize: FONTS.caption,
     color: COLORS.primary,
     fontWeight: "600",
+  },
+  // Staff view styles
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: RADII.xl,
+    backgroundColor: COLORS.white,
+    justifyContent: "center",
+    alignItems: "center",
+    ...SHADOWS.md,
+  },
+  placeholder: {
+    width: 40,
+  },
+  staffEventCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADII.lg,
+    marginBottom: SPACING.lg,
+    ...SHADOWS.md,
+  },
+  staffEventHeader: {
+    padding: SPACING.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.background,
+  },
+  staffEventTitleContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  staffEventTitle: {
+    flex: 1,
+    fontSize: FONTS.lg,
+    fontWeight: "bold",
+    color: COLORS.text,
+    marginRight: SPACING.md,
+  },
+  statusBadge: {
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    borderRadius: RADII.sm,
+  },
+  statusText: {
+    fontSize: FONTS.xs,
+    fontWeight: "600",
+    color: COLORS.white,
+  },
+  staffEventInfo: {
+    padding: SPACING.lg,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: SPACING.sm,
+  },
+  infoText: {
+    marginLeft: SPACING.sm,
+    fontSize: FONTS.sm,
+    color: COLORS.text,
+    flex: 1,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.background,
+    marginVertical: SPACING.md,
+  },
+  assignmentInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  roleBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    borderRadius: RADII.sm,
+  },
+  roleText: {
+    marginLeft: SPACING.xs,
+    fontSize: FONTS.xs,
+    fontWeight: "600",
+    color: COLORS.primary,
+  },
+  cardFooter: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: COLORS.background,
+    padding: SPACING.md,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: SPACING.sm,
+    marginHorizontal: SPACING.xs,
+  },
+  actionButtonText: {
+    marginLeft: SPACING.xs,
+    fontSize: FONTS.sm,
+    fontWeight: "600",
+    color: COLORS.primary,
   },
 });
 

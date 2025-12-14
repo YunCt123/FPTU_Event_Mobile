@@ -35,18 +35,7 @@ const MENU_ITEMS = [
     title: "Lịch sử đăng ký",
     subtitle: "Xem các sự kiện đã tham gia",
   },
-  {
-    id: "4",
-    icon: "notifications",
-    title: "Thông báo",
-    subtitle: "Cài đặt thông báo",
-  },
-  {
-    id: "5",
-    icon: "settings",
-    title: "Cài đặt",
-    subtitle: "Tùy chỉnh ứng dụng",
-  },
+
   {
     id: "6",
     icon: "help-circle",
@@ -86,10 +75,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           STORAGE_KEYS.REFRESH_TOKEN,
           STORAGE_KEYS.USER,
         ]);
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "Auth" as never }],
-          });
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "Auth" as never }],
+        });
         return;
       }
 
