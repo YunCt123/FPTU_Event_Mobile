@@ -402,8 +402,11 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
+    borderRadius: RADII.xl,
+    backgroundColor: COLORS.white,
     justifyContent: "center",
     alignItems: "center",
+    ...SHADOWS.md,
   },
   headerTitle: {
     fontSize: FONTS.title,

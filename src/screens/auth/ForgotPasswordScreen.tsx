@@ -7,17 +7,17 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   ScrollView,
-  Alert,
   Platform,
   Animated,
   Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { authService } from "../../services/authService";
-import { GradientButton } from "../../components";
+import { GradientButton, ActionResultModal, ActionResultType } from "../../components";
 
 type ForgotPasswordScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -47,6 +47,13 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
     newPassword?: string;
     confirmPassword?: string;
   }>({});
+
+  // Modal state
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<ActionResultType>("success");
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalAction, setModalAction] = useState<(() => void) | undefined>();
 
   // Refs for OTP inputs
   const otpInputRefs = useRef<(TextInput | null)[]>([]);
@@ -124,21 +131,16 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
 
       setResendTimer(60);
 
-      Alert.alert(
-        "Gửi thành công! ✉️",
-        "Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư (cả spam).",
-        [
-          {
-            text: "Tiếp tục",
-            onPress: () => {
-              animateStepChange(() => {
-                setStep("otp");
-                setTimeout(() => otpInputRefs.current[0]?.focus(), 300);
-              });
-            },
-          },
-        ]
-      );
+      setModalType("success");
+      setModalTitle("Gửi thành công!");
+      setModalMessage("Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư (cả spam).");
+      setModalAction(() => () => {
+        animateStepChange(() => {
+          setStep("otp");
+          setTimeout(() => otpInputRefs.current[0]?.focus(), 300);
+        });
+      });
+      setModalVisible(true);
     } catch (e: any) {
       console.log("Forgot password error:", e?.response ?? e);
       const message =
@@ -233,9 +235,17 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
       await authService.forgotPassword({ email });
       setResendTimer(60);
       setOtpDigits(Array(OTP_LENGTH).fill(""));
-      Alert.alert("Thành công", "Mã OTP mới đã được gửi đến email của bạn.");
+      setModalType("success");
+      setModalTitle("Thành công!");
+      setModalMessage("Mã OTP mới đã được gửi đến email của bạn.");
+      setModalAction(undefined);
+      setModalVisible(true);
     } catch (e: any) {
-      Alert.alert("Lỗi", "Không thể gửi lại OTP. Vui lòng thử lại.");
+      setModalType("error");
+      setModalTitle("Lỗi!");
+      setModalMessage("Không thể gửi lại OTP. Vui lòng thử lại.");
+      setModalAction(undefined);
+      setModalVisible(true);
     } finally {
       setLoading(false);
     }
@@ -274,22 +284,21 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
         newPassword,
       });
 
-      Alert.alert(
-        "Đặt lại thành công! 🎉",
-        "Mật khẩu của bạn đã được cập nhật. Hãy đăng nhập với mật khẩu mới.",
-        [
-          {
-            text: "Đăng nhập ngay",
-            onPress: () => navigation.navigate("Login"),
-          },
-        ]
-      );
+      setModalType("success");
+      setModalTitle("Đặt lại thành công! 🎉");
+      setModalMessage("Mật khẩu của bạn đã được cập nhật. Hãy đăng nhập với mật khẩu mới.");
+      setModalAction(() => () => navigation.navigate("Login"));
+      setModalVisible(true);
     } catch (e: any) {
       console.log("Reset password error:", e?.response ?? e);
       const message =
         e?.response?.data?.message ||
         "Đặt lại mật khẩu thất bại. Vui lòng thử lại.";
-      Alert.alert("Lỗi", message);
+      setModalType("error");
+      setModalTitle("Lỗi!");
+      setModalMessage(message);
+      setModalAction(undefined);
+      setModalVisible(true);
     } finally {
       setLoading(false);
     }
@@ -437,14 +446,6 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
         disabled={loading || !email}
         style={styles.submitButton}
       />
-
-      <TouchableOpacity
-        style={styles.backToLoginButton}
-        onPress={() => navigation.navigate("Login")}
-      >
-        <Ionicons name="arrow-back" size={16} color={COLORS.primary} />
-        <Text style={styles.backToLoginText}>Quay lại đăng nhập</Text>
-      </TouchableOpacity>
     </Animated.View>
   );
 
@@ -709,29 +710,52 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardView}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-              <View style={styles.backButtonInner}>
-                <Ionicons name="chevron-back" size={24} color={COLORS.text} />
-              </View>
-            </TouchableOpacity>
-          </View>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Header */}
+            <View style={styles.header}>
+              <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+                <View style={styles.backButtonInner}>
+                  <Ionicons name="chevron-back" size={24} color={COLORS.text} />
+                </View>
+              </TouchableOpacity>
+            </View>
 
-          {/* Step Indicator */}
-          {renderStepIndicator()}
+            {/* Step Indicator */}
+            {renderStepIndicator()}
 
-          {/* Step Content */}
-          {step === "email" && renderEmailStep()}
-          {step === "otp" && renderOtpStep()}
-          {step === "password" && renderPasswordStep()}
-        </ScrollView>
+            {/* Step Content */}
+            {step === "email" && renderEmailStep()}
+            {step === "otp" && renderOtpStep()}
+            {step === "password" && renderPasswordStep()}
+          </ScrollView>
+        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+
+      {/* Action Result Modal */}
+      <ActionResultModal
+        visible={modalVisible}
+        type={modalType}
+        title={modalTitle}
+        message={modalMessage}
+        buttonText={
+          modalAction
+            ? modalType === "success" && step === "password"
+              ? "Đăng nhập ngay"
+              : "Tiếp tục"
+            : "Đóng"
+        }
+        onClose={() => {
+          setModalVisible(false);
+          if (modalAction) {
+            modalAction();
+          }
+        }}
+      />
     </LinearGradient>
   );
 };
@@ -762,10 +786,8 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: COLORS.white,
     justifyContent: "center",
     alignItems: "center",
-    ...SHADOWS.sm,
   },
 
   // Step Indicator

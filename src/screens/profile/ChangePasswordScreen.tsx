@@ -7,8 +7,9 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   ScrollView,
-  Alert,
   Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
@@ -22,7 +23,7 @@ import {
   SHADOWS,
 } from "../../utils/theme";
 import { authService } from "../../services/authService";
-import { GradientButton } from "../../components";
+import { GradientButton, ActionResultModal, ActionResultType } from "../../components";
 
 type ChangePasswordScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -119,6 +120,12 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({
     confirmPassword?: string;
   }>({});
 
+  // Modal state
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<ActionResultType>("success");
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+
   const handleCurrentPasswordChange = useCallback((text: string) => {
     setCurrentPassword(text);
     setErrors((prev) => {
@@ -188,21 +195,10 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({
         newPassword,
       });
 
-      Alert.alert(
-        "Thành công",
-        "Đổi mật khẩu thành công. Bạn có thể đăng nhập với mật khẩu mới.",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              setCurrentPassword("");
-              setNewPassword("");
-              setConfirmPassword("");
-              navigation.goBack();
-            },
-          },
-        ]
-      );
+      setModalType("success");
+      setModalTitle("Thành công!");
+      setModalMessage("Đổi mật khẩu thành công. Bạn có thể đăng nhập với mật khẩu mới.");
+      setModalVisible(true);
     } catch (e: any) {
       console.log("Change password error:", e?.response ?? e);
       const message =
@@ -212,7 +208,10 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({
       if (e?.response?.status === 400) {
         setErrors({ currentPassword: message });
       } else {
-        Alert.alert("Lỗi", message);
+        setModalType("error");
+        setModalTitle("Lỗi!");
+        setModalMessage(message);
+        setModalVisible(true);
       }
     } finally {
       setLoading(false);
@@ -231,14 +230,14 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({
         style={styles.keyboardView}
         enabled={true}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="always"
-          keyboardDismissMode="none"
-          scrollEnabled={true}
-          bounces={false}
-        >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            scrollEnabled={true}
+            bounces={false}
+          >
           <View style={styles.header}>
             <TouchableOpacity
               style={styles.backButton}
@@ -248,18 +247,10 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({
             </TouchableOpacity>
             <View style={styles.headerTextContainer}>
               <Text style={styles.headerTitle}>Đổi mật khẩu</Text>
-              <Text style={styles.headerSubtitle}>
-                Vui lòng nhập mật khẩu hiện tại và mật khẩu mới
-              </Text>
             </View>
           </View>
 
           <View style={styles.form}>
-            <View style={styles.iconContainer}>
-              <View style={styles.iconWrapper}>
-                <Ionicons name="lock-closed" size={32} color={COLORS.primary} />
-              </View>
-            </View>
 
             <PasswordInput
               label="Mật khẩu hiện tại"
@@ -316,7 +307,25 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({
             />
           </View>
         </ScrollView>
+        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+
+      {/* Action Result Modal */}
+      <ActionResultModal
+        visible={modalVisible}
+        type={modalType}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => {
+          setModalVisible(false);
+          if (modalType === "success") {
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+            navigation.goBack();
+          }
+        }}
+      />
     </LinearGradient>
   );
 };
@@ -337,44 +346,30 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: SPACING.xxxl,
   },
   backButton: {
     width: 40,
     height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: SPACING.md,
-  },
-  headerTextContainer: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: FONTS.display,
-    fontWeight: "bold",
-    color: COLORS.text,
-    marginBottom: SPACING.xs,
-  },
-  headerSubtitle: {
-    fontSize: FONTS.body,
-    color: COLORS.text,
-    opacity: 0.6,
-  },
-  form: {
-    gap: SPACING.lg,
-  },
-  iconContainer: {
-    alignItems: "center",
-    marginBottom: SPACING.md,
-  },
-  iconWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    borderRadius: RADII.xl,
     backgroundColor: COLORS.white,
     justifyContent: "center",
     alignItems: "center",
     ...SHADOWS.md,
+  },
+  headerTextContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: FONTS.title,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginLeft: -40,
+  },
+  form: {
+    gap: SPACING.lg,
   },
   inputContainer: {
     gap: SPACING.sm,

@@ -140,12 +140,6 @@ export default function StaffAssignedEventsScreen({
         >
           {events.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => navigation.goBack()}
-              >
-                <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-              </TouchableOpacity>
               <Text style={styles.emptyText}>
                 Bạn chưa được phân công vào sự kiện nào
               </Text>

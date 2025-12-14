@@ -21,7 +21,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { incidentService } from "../../services/incidentService";
 import { IncidentSeverity } from "../../types/incident";
-import CustomAlertModal from "../../components/CustomAlertModal";
+import { ActionResultModal, ActionResultType } from "../../components";
 import { CLOUDINARY_CONFIG } from "../../config/cloudinary";
 
 type IncidentType = string;
@@ -99,7 +99,7 @@ export default function IncidentReportScreen({
   const [loading, setLoading] = useState(false);
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
-    type: "success" | "error" | "warning" | "info";
+    type: ActionResultType;
     title: string;
     message: string;
   }>({ visible: false, type: "info", title: "", message: "" });
@@ -524,7 +524,7 @@ export default function IncidentReportScreen({
           </View>
         </ScrollView>
 
-        <CustomAlertModal
+        <ActionResultModal
           visible={alertConfig.visible}
           type={alertConfig.type}
           title={alertConfig.title}

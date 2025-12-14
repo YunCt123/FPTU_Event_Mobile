@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { GradientButton } from "../../components";
 import { authService } from "../../services/authService";
 import { STORAGE_KEYS } from "../../api/api";
 import { User } from "../../types/user";
@@ -132,8 +133,14 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
   const renderMenuItems = () => {
     const isStaff = user?.roleName?.toLowerCase() === "staff";
+    
+    // Filter menu items - ẩn "Lịch sử đăng ký" (id="2") nếu là staff
+    const baseMenuItems = MENU_ITEMS.filter(
+      (item) => !(isStaff && item.id === "2")
+    );
+    
     const items = [
-      ...MENU_ITEMS,
+      ...baseMenuItems,
       ...(isStaff
         ? [
             {
@@ -191,21 +198,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     );
   };
 
-  const renderStats = () => (
-    <View style={styles.statsContainer}>
-      <View style={styles.statItem}>
-        <Text style={styles.statNumber}>12</Text>
-        <Text style={styles.statLabel}>Sự kiện</Text>
-      </View>
-      <View style={styles.statDivider} />
-      <View style={styles.statItem}>
-        <Text style={styles.statNumber}>5</Text>
-        <Text style={styles.statLabel}>Sắp tới</Text>
-      </View>
-      <View style={styles.statDivider} />
-    </View>
-  );
-
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -224,12 +216,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.profileHeader}>
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 style={styles.backButton}
                 onPress={() => navigation.goBack()}
               >
                 <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-              </TouchableOpacity>
+              </TouchableOpacity> */}
               <View style={styles.avatarContainer}>
                 {user?.avatar ? (
                   <Image
@@ -251,18 +243,13 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             </View>
 
             {error && <Text style={styles.errorText}>{error}</Text>}
-
-            {renderStats()}
             {renderMenuItems()}
 
-            <TouchableOpacity
-              style={styles.logoutButton}
+            <GradientButton
+              title="Đăng xuất"
               onPress={handleLogout}
-            >
-              <Text style={styles.logoutButtonText}>Đăng xuất</Text>
-            </TouchableOpacity>
-
-            <Text style={styles.versionText}>Phiên bản 1.0.0</Text>
+              gradientColors={COLORS.gradient_button}
+            />
           </ScrollView>
         )}
       </LinearGradient>
@@ -411,12 +398,6 @@ const styles = StyleSheet.create({
     color: COLORS.error,
     fontSize: FONTS.body,
     fontWeight: "600",
-  },
-  versionText: {
-    fontSize: FONTS.caption,
-    color: COLORS.text,
-    opacity: 0.4,
-    textAlign: "center",
   },
   errorText: {
     color: "red",
