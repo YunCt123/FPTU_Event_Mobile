@@ -21,21 +21,30 @@ import { eventService } from "../../services/eventService";
 import { Event } from "../../types/event";
 import img from "../../assets/fpt_logo.png";
 import { STORAGE_KEYS } from "../../api/api";
+import { eventService } from "../../services/eventService";
+import { Event } from "../../types/event";
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<any>;
 };
 
-const GRADIENT_COLORS = [
-  COLORS.gradient_2,
-  [COLORS.primary, "#FF8E53"],
-  ["#4CAF50", "#66BB6A"],
-] as const;
+// Helper function to convert Event to FeaturedEvent
+const convertToFeaturedEvent = (event: Event): FeaturedEvent => {
+  return {
+    id: event.id,
+    title: event.title,
+    subtitle: event.category || "Sự kiện",
+    gradientColors: COLORS.gradient_1,
+    date: new Date(event.startTime).toLocaleDateString('vi-VN'),
+    location: event.venue?.name || "Đang cập nhật",
+    attendees: event.registeredCount || 0,
+  };
+};
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [userAvatar, setUserAvatar] = useState<string | null>(null);
-  const [events, setEvents] = useState<Event[]>([]);
+  const [featuredEvents, setFeaturedEvents] = useState<FeaturedEvent[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -59,28 +68,24 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     const loadEvents = async () => {
       try {
         setLoading(true);
+        // Lấy danh sách sự kiện với status PUBLISHED
         const response = await eventService.getEvents({
-          page: 1,
-          limit: 50, // Load nhiều để có đủ dữ liệu
+          status: "PUBLISHED",
+          limit: 10,
         });
-
-        // Handle different response formats
-        let eventsData: Event[] = [];
-        if (Array.isArray(response)) {
-          eventsData = response;
-        } else if (
-          response &&
-          typeof response === "object" &&
-          "data" in response
-        ) {
-          eventsData = Array.isArray(response.data) ? response.data : [];
+        
+        if (response.data && response.data.length > 0) {
+          // Chuyển đổi events cho featured banner (3 sự kiện đầu tiên)
+          const featured = response.data.slice(0, 3).map(convertToFeaturedEvent);
+          setFeaturedEvents(featured);
+          
+          // Lấy các sự kiện sắp tới (sắp xếp theo thời gian bắt đầu)
+          const upcoming = response.data
+            .filter(event => new Date(event.startTime) > new Date())
+            .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+            .slice(0, 2);
+          setUpcomingEvents(upcoming);
         }
-
-        // Filter only published events
-        const publishedEvents = eventsData.filter(
-          (event) => event.status === "PUBLISHED"
-        );
-        setEvents(publishedEvents);
       } catch (error) {
         console.error("Error loading events:", error);
       } finally {
@@ -134,6 +139,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   }, [events]);
 
   const isStaff = userRole === "staff";
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={{ color: COLORS.text, marginTop: SPACING.md }}>Đang tải sự kiện...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
