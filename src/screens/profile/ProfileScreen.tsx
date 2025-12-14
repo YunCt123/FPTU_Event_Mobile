@@ -35,7 +35,12 @@ const MENU_ITEMS = [
     title: "Lịch sử đăng ký",
     subtitle: "Xem các sự kiện đã tham gia",
   },
-
+  {
+    id: "3",
+    icon: "lock-closed",
+    title: "Đổi mật khẩu",
+    subtitle: "Thay đổi mật khẩu tài khoản",
+  },
   {
     id: "6",
     icon: "help-circle",
@@ -159,6 +164,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                 navigation.navigate("PersonalInfo");
               } else if (item.id === "2") {
                 navigation.navigate("TicketHistory");
+              } else if (item.id === "3") {
+                navigation.navigate("ChangePassword");
               } else if (item.id === "staff-events") {
                 navigation.navigate("StaffAssignedEvents");
               } else if (item.id === "incident-history") {

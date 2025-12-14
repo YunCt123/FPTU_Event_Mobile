@@ -4,6 +4,7 @@ import { AuthStackParamList } from "../types/navigation";
 import AuthLandingScreen from "../screens/auth/AuthLandingScreen";
 import LoginScreen from "../screens/auth/LoginScreen";
 import RegisterScreen from "../screens/auth/RegisterScreen";
+import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
 import RegisterAdditionalScreen from "../screens/auth/RegisterAdditionalScreen";
 import RegisterStudentCardScreen from "../screens/auth/RegisterStudentCardScreen";
 
@@ -20,6 +21,7 @@ const AuthNavigator: React.FC = () => {
       <Stack.Screen name="AuthLanding" component={AuthLandingScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen
         name="RegisterAdditional"
         component={RegisterAdditionalScreen}

@@ -28,6 +28,7 @@ export type RootStackParamList = {
   Profile: undefined;
   EditProfile: undefined;
   PersonalInfo: undefined;
+  ChangePassword: undefined;
 
     // Staff Screens
     StaffAssignedEvents: undefined;
@@ -41,6 +42,7 @@ export type AuthStackParamList = {
   AuthLanding: { registerMessage?: string } | undefined;
   Login: undefined;
   Register: undefined;
+  ForgotPassword: undefined;
   RegisterAdditional: {
     userName: string;
     firstName: string;
