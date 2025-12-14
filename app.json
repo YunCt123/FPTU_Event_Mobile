@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "fptu-event",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -15,11 +16,24 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.fptu.eventmobile"
     },
+    "android": {
+      "package": "com.fptu.eventmobile"
+    },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-barcode-scanner"
-    ]
+      "expo-barcode-scanner",
+      "expo-web-browser",
+      [
+        "onesignal-expo-plugin",
+        {
+          "mode": "development"
+        }
+      ]
+    ],
+    "extra": {
+      "oneSignalAppId": "YOUR_ONESIGNAL_APP_ID"
+    }
   }
 }

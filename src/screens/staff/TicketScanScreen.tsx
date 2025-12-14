@@ -17,14 +17,16 @@ import {
 import { CameraView, Camera } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRoute, RouteProp } from "@react-navigation/native";
 import { ticketService } from "../../services/ticketService";
-import { ScanTicketResponse } from "../../types/ticket";
+import { ScanTicketResponse, ManualCheckinResponse } from "../../types/ticket";
 import { COLORS, FONTS, RADII, SHADOWS, SPACING } from "../../utils/theme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { STORAGE_KEYS } from "../../api/api";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRealtimeCheckin } from "../../hooks/useRealtimeCheckin";
+import { CheckinPayload } from "../../services/socketService";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RouteProp } from "@react-navigation/native";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const SCANNER_SIZE = SCREEN_WIDTH * 0.7;
@@ -38,18 +40,37 @@ type TicketScanScreenProps = {
 };
 
 const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
+  const eventId = route?.params?.eventId;
+  const eventTitle = route?.params?.eventTitle;
+
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
   const [manualQr, setManualQr] = useState("");
-  const [result, setResult] = useState<ScanTicketResponse | null>(null);
+  const [studentCode, setStudentCode] = useState("");
+  const [result, setResult] = useState<
+    ScanTicketResponse | ManualCheckinResponse | null
+  >(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [staffId, setStaffId] = useState<number | null>(null);
   const [showManualInput, setShowManualInput] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
+  const [realtimeCheckins, setRealtimeCheckins] = useState<CheckinPayload[]>(
+    []
+  );
 
   const scanLineAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  // Realtime check-in hook - only active when eventId is provided
+  const { isConnected, checkinCount, recentCheckins } = useRealtimeCheckin({
+    eventId: eventId || "",
+    onCheckin: (payload) => {
+      // Update local state with realtime checkins from other staff
+      setRealtimeCheckins((prev) => [payload, ...prev].slice(0, 10));
+      console.log("[Realtime] New check-in from another staff:", payload);
+    },
+  });
 
   useEffect(() => {
     const requestPermission = async () => {
@@ -123,6 +144,7 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
     setErrorMessage(null);
     setShowResultModal(false);
     setManualQr("");
+    setStudentCode("");
   };
 
   const handleScan = async (qrCode: string) => {
@@ -164,6 +186,53 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
     setScanned(true);
     setShowManualInput(false);
     handleScan(manualQr.trim());
+  };
+
+  const handleManualCheckin = async () => {
+    if (!studentCode.trim()) {
+      Alert.alert("Lỗi", "Vui lòng nhập mã sinh viên");
+      return;
+    }
+
+    if (!eventId) {
+      Alert.alert(
+        "Lỗi",
+        "Không tìm thấy thông tin sự kiện. Vui lòng quay lại và chọn sự kiện."
+      );
+      return;
+    }
+
+    if (!staffId) {
+      Alert.alert(
+        "Thiếu thông tin",
+        "Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại."
+      );
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setScanned(true);
+      setShowManualInput(false);
+      setErrorMessage(null);
+
+      const response = await ticketService.manualCheckin({
+        studentCode: studentCode.trim(),
+        eventId: eventId,
+        staffId: staffId,
+      });
+
+      setResult(response);
+      setShowResultModal(true);
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        "Check-in thủ công thất bại. Vui lòng thử lại.";
+      setErrorMessage(message);
+      setShowResultModal(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const scanLineTranslate = scanLineAnim.interpolate({
@@ -223,19 +292,42 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
       <View style={styles.overlay}>
         {/* Header */}
         <SafeAreaView edges={["top"]} style={styles.header}>
-          <TouchableOpacity
+           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
             <Ionicons name="arrow-back" size={24} color={COLORS.white} />
           </TouchableOpacity>
-          <View>
-            <Text style={styles.headerTitle}>Quét vé</Text>
+          <Text style={styles.headerTitle}>Quét vé</Text>
+          {eventTitle ? (
+            <Text style={styles.headerEventName} numberOfLines={1}>
+              {eventTitle}
+            </Text>
+          ) : (
             <Text style={styles.headerSubtitle}>
               Đưa mã QR vào khung để check-in
             </Text>
-          </View>
-          <View></View>
+          )}
+
+          {/* Realtime status indicator */}
+          {eventId && (
+            <View style={styles.realtimeStatus}>
+              <View
+                style={[
+                  styles.connectionDot,
+                  { backgroundColor: isConnected ? "#10b981" : "#ef4444" },
+                ]}
+              />
+              <Text style={styles.realtimeText}>
+                {isConnected ? "Realtime" : "Đang kết nối..."}
+              </Text>
+              {checkinCount > 0 && (
+                <View style={styles.checkinCountBadge}>
+                  <Text style={styles.checkinCountText}>+{checkinCount}</Text>
+                </View>
+              )}
+            </View>
+          )}
         </SafeAreaView>
 
         {/* Scanner frame */}
@@ -308,6 +400,7 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
       </View>
 
       {/* Manual Input Modal */}
+      {/* Manual Input Modal */}
       <Modal
         visible={showManualInput}
         transparent
@@ -324,11 +417,40 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
           />
           <View style={styles.manualInputContainer}>
             <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Nhập mã QR thủ công</Text>
+            <Text style={styles.modalTitle}>Check-in thủ công</Text>
             <Text style={styles.modalSubtitle}>
-              Nhập mã code in trên vé nếu không thể quét được
+              Nhập mã sinh viên hoặc mã QR code để check-in
             </Text>
 
+            {/* Student Code Input */}
+            <Text style={styles.inputLabel}>Mã sinh viên</Text>
+            <View style={styles.inputWrapper}>
+              <Ionicons
+                name="school"
+                size={20}
+                color="#94a3b8"
+                style={styles.inputIcon}
+              />
+              <TextInput
+                placeholder="VD: SE123456"
+                placeholderTextColor="#94a3b8"
+                style={styles.textInput}
+                value={studentCode}
+                onChangeText={setStudentCode}
+                autoCapitalize="characters"
+                autoCorrect={false}
+              />
+            </View>
+
+            {/* Divider */}
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>HOẶC</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* QR Code Input */}
+            <Text style={styles.inputLabel}>Mã QR code</Text>
             <View style={styles.inputWrapper}>
               <Ionicons
                 name="qr-code"
@@ -357,7 +479,18 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
 
               <TouchableOpacity
                 style={styles.submitButton}
-                onPress={handleManualSubmit}
+                onPress={() => {
+                  if (studentCode.trim()) {
+                    handleManualCheckin();
+                  } else if (manualQr.trim()) {
+                    handleManualSubmit();
+                  } else {
+                    Alert.alert(
+                      "Lỗi",
+                      "Vui lòng nhập mã sinh viên hoặc mã QR code"
+                    );
+                  }
+                }}
               >
                 <LinearGradient
                   colors={["#FF9A3C", "#FF6A00"]}
@@ -556,6 +689,40 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: SPACING.xs,
   },
+  headerEventName: {
+    color: COLORS.primary,
+    fontSize: FONTS.bodyLarge,
+    fontWeight: "600",
+    textAlign: "center",
+    marginTop: SPACING.xs,
+  },
+  realtimeStatus: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: SPACING.sm,
+    gap: 6,
+  },
+  connectionDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  realtimeText: {
+    color: "rgba(255, 255, 255, 0.7)",
+    fontSize: FONTS.caption,
+  },
+  checkinCountBadge: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  checkinCountText: {
+    color: COLORS.white,
+    fontSize: FONTS.caption,
+    fontWeight: "700",
+  },
   scannerContainer: {
     flex: 1,
     justifyContent: "center",
@@ -701,7 +868,30 @@ const styles = StyleSheet.create({
     color: "#64748b",
     textAlign: "center",
     marginTop: SPACING.xs,
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.lg,
+  },
+  inputLabel: {
+    fontSize: FONTS.body,
+    fontWeight: "600",
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
+    alignSelf: "flex-start",
+  },
+  dividerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: SPACING.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#e2e8f0",
+  },
+  dividerText: {
+    paddingHorizontal: SPACING.md,
+    fontSize: FONTS.sm,
+    color: "#94a3b8",
+    fontWeight: "500",
   },
   inputWrapper: {
     flexDirection: "row",

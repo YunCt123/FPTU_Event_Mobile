@@ -5,19 +5,23 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   Dimensions,
   Platform,
+  Modal,
+  Animated,
+  Easing,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RouteProp } from "@react-navigation/native";
+import { RouteProp, CommonActions } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { ticketService } from "../../services/ticketService";
+import { ActionResultModal, ActionResultType } from "../../components";
 import { Ticket } from "../../types/ticket";
 import { RootStackParamList } from "../../types/navigation";
 import QRCode from "react-native-qrcode-svg";
+import { socketService, CheckinPayload } from "../../services/socketService";
 
 type TicketQRCodeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "TicketQRCode">;
@@ -35,6 +39,34 @@ const TicketQRCodeScreen: React.FC<TicketQRCodeScreenProps> = ({
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
   const [brightness, setBrightness] = useState(1);
+  const [showCheckinModal, setShowCheckinModal] = useState(false);
+  const [checkinTime, setCheckinTime] = useState<string | null>(null);
+
+  // Alert Modal state
+  const [alertModalVisible, setAlertModalVisible] = useState(false);
+  const [alertModalType, setAlertModalType] = useState<ActionResultType>("error");
+  const [alertModalTitle, setAlertModalTitle] = useState("");
+  const [alertModalMessage, setAlertModalMessage] = useState("");
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const handleCloseModal = () => {
+    setShowCheckinModal(false);
+    // Navigate back to Main and then to Ticket tab
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Main" }],
+    });
+  };
 
   useEffect(() => {
     fetchTicketDetail();
@@ -46,6 +78,38 @@ const TicketQRCodeScreen: React.FC<TicketQRCodeScreenProps> = ({
       restoreBrightness();
     };
   }, [ticketId]);
+
+  // Realtime check-in listener
+  useEffect(() => {
+    if (!ticket?.event?.id) return;
+
+    console.log("[QRScreen] Setting up socket for event:", ticket.event.id);
+
+    // Connect and join event room
+    socketService.connect();
+    socketService.joinEventRoom(ticket.event.id);
+
+    // Listen for check-in events for THIS ticket
+    const unsubscribe = socketService.onCheckin((payload: CheckinPayload) => {
+      console.log(
+        "[QRScreen] Received checkin:",
+        payload.ticketId,
+        "our:",
+        ticketId
+      );
+
+      if (payload.ticketId === ticketId) {
+        console.log("[QRScreen] ✅ MATCH! Showing modal...");
+        setCheckinTime(payload.checkinTime);
+        setShowCheckinModal(true);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      socketService.leaveEventRoom(ticket.event.id);
+    };
+  }, [ticket?.event?.id, ticketId]);
 
   const increaseBrightness = async () => {
     try {
@@ -68,24 +132,22 @@ const TicketQRCodeScreen: React.FC<TicketQRCodeScreenProps> = ({
     try {
       setLoading(true);
       const response = await ticketService.getTicketById(ticketId);
-      
+
       if (response.status !== "VALID") {
-        Alert.alert(
-          "Thông báo",
-          "Vé này không còn hiệu lực",
-          [{ text: "OK", onPress: () => navigation.goBack() }]
-        );
+        setAlertModalType("warning");
+        setAlertModalTitle("Thông báo");
+        setAlertModalMessage("Vé này không còn hiệu lực");
+        setAlertModalVisible(true);
         return;
       }
 
       setTicket(response);
     } catch (error) {
       console.error("Failed to fetch ticket detail", error);
-      Alert.alert(
-        "Lỗi",
-        "Không thể tải thông tin vé",
-        [{ text: "OK", onPress: () => navigation.goBack() }]
-      );
+      setAlertModalType("error");
+      setAlertModalTitle("Lỗi!");
+      setAlertModalMessage("Không thể tải thông tin vé. Vui lòng thử lại.");
+      setAlertModalVisible(true);
     } finally {
       setLoading(false);
     }
@@ -123,9 +185,15 @@ const TicketQRCodeScreen: React.FC<TicketQRCodeScreenProps> = ({
           <Text style={styles.headerTitle}>Mã QR</Text>
           <TouchableOpacity
             style={styles.infoButton}
-            onPress={() => navigation.navigate("TicketDetails", { ticketId: ticket.id })}
+            onPress={() =>
+              navigation.navigate("TicketDetails", { ticketId: ticket.id })
+            }
           >
-            <Ionicons name="information-circle-outline" size={24} color={COLORS.text} />
+            <Ionicons
+              name="information-circle-outline"
+              size={24}
+              color={COLORS.text}
+            />
           </TouchableOpacity>
         </View>
 
@@ -162,7 +230,11 @@ const TicketQRCodeScreen: React.FC<TicketQRCodeScreenProps> = ({
 
           {/* Instructions */}
           <View style={styles.instructionCard}>
-            <Ionicons name="information-circle" size={20} color={COLORS.primary} />
+            <Ionicons
+              name="information-circle"
+              size={20}
+              color={COLORS.primary}
+            />
             <Text style={styles.instructionText}>
               Vui lòng đưa mã QR này cho nhân viên để check-in tại sự kiện
             </Text>
@@ -172,20 +244,64 @@ const TicketQRCodeScreen: React.FC<TicketQRCodeScreenProps> = ({
           <View style={styles.tipsContainer}>
             <Text style={styles.tipsTitle}>Lưu ý:</Text>
             <View style={styles.tipRow}>
-              <Ionicons name="checkmark-circle-outline" size={16} color={COLORS.text} />
-              <Text style={styles.tipText}>Mỗi mã QR chỉ được sử dụng một lần</Text>
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={16}
+                color={COLORS.text}
+              />
+              <Text style={styles.tipText}>
+                Mỗi mã QR chỉ được sử dụng một lần
+              </Text>
             </View>
             <View style={styles.tipRow}>
-              <Ionicons name="checkmark-circle-outline" size={16} color={COLORS.text} />
-              <Text style={styles.tipText}>Không chia sẻ mã QR cho người khác</Text>
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={16}
+                color={COLORS.text}
+              />
+              <Text style={styles.tipText}>
+                Không chia sẻ mã QR cho người khác
+              </Text>
             </View>
             <View style={styles.tipRow}>
-              <Ionicons name="checkmark-circle-outline" size={16} color={COLORS.text} />
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={16}
+                color={COLORS.text}
+              />
               <Text style={styles.tipText}>Đến sớm để tránh xếp hàng</Text>
             </View>
           </View>
         </View>
       </LinearGradient>
+
+      {/* Realtime Check-in Success Modal */}
+      <ActionResultModal
+        visible={showCheckinModal}
+        type="success"
+        title="Check-in thành công!"
+        subtitle="Chào mừng bạn đến sự kiện"
+        message={
+          ticket?.event?.title
+            ? `${ticket.event.title}${checkinTime ? `\n\nThời gian: ${formatDateTime(checkinTime)}` : ""}`
+            : "Hãy tận hưởng sự kiện và có những trải nghiệm tuyệt vời nhé!"
+        }
+        buttonText="Về màn hình chính"
+        onClose={handleCloseModal}
+        showConfetti={true}
+      />
+
+      {/* Alert Modal */}
+      <ActionResultModal
+        visible={alertModalVisible}
+        type={alertModalType}
+        title={alertModalTitle}
+        message={alertModalMessage}
+        onClose={() => {
+          setAlertModalVisible(false);
+          navigation.goBack();
+        }}
+      />
     </View>
   );
 };

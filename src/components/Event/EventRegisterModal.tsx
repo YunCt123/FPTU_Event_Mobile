@@ -21,7 +21,7 @@ import {
 import { seatService, Seat } from "../../services/seatService";
 import { eventService } from "../../services/eventService";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
-import CustomAlertModal from "../CustomAlertModal";
+import { ActionResultModal, ActionResultType } from "../index";
 
 interface EventRegisterModalProps {
   visible: boolean;
@@ -64,7 +64,7 @@ const EventRegisterModal: React.FC<EventRegisterModalProps> = ({
   const [registering, setRegistering] = useState(false);
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
-    type: "success" | "error" | "warning" | "info";
+    type: ActionResultType;
     title: string;
     message: string;
   }>({ visible: false, type: "info", title: "", message: "" });
@@ -418,7 +418,7 @@ const EventRegisterModal: React.FC<EventRegisterModalProps> = ({
           </View>
         </View>
 
-        <CustomAlertModal
+        <ActionResultModal
           visible={alertConfig.visible}
           type={alertConfig.type}
           title={alertConfig.title}
