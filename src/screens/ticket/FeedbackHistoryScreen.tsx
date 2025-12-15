@@ -17,6 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { feedbackService } from "../../services/feedbackService";
+import { myFeedback } from "../../types/feedback";
 import CustomAlertModal from "../../components/CustomAlertModal";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -37,26 +38,6 @@ type FeedbackHistoryScreenProps = {
   >;
 };
 
-interface FeedbackData {
-  id: string;
-  rating: number;
-  comment: string;
-  eventId: string;
-  createdAt: string;
-  event?: {
-    id: string;
-    title: string;
-    bannerUrl?: string;
-    startTime?: string;
-    endTime?: string;
-    description?: string;
-    venue?: {
-      name: string;
-      address?: string;
-    };
-  };
-}
-
 const RATING_LABELS = ["Rất tệ", "Tệ", "Bình thường", "Tốt", "Tuyệt vời"];
 const RATING_EMOJIS = ["😞", "😕", "😐", "😊", "🤩"];
 const RATING_COLORS = ["#F44336", "#FF9800", "#FFC107", "#8BC34A", "#4CAF50"];
@@ -73,7 +54,7 @@ export default function FeedbackHistoryScreen({
     eventVenueName,
   } = route.params;
 
-  const [feedback, setFeedback] = useState<FeedbackData | null>(null);
+  const [feedback, setFeedback] = useState<myFeedback | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [alertConfig, setAlertConfig] = useState<{
@@ -91,8 +72,7 @@ export default function FeedbackHistoryScreen({
         setLoading(true);
       }
 
-      const response = await feedbackService.getMyFeedbacks();
-      const feedbacks = response as unknown as FeedbackData[];
+      const feedbacks = await feedbackService.getMyFeedbacks();
 
       // Tìm feedback của event cụ thể
       const eventFeedback = feedbacks.find((f) => f.eventId === eventId);
@@ -217,7 +197,10 @@ export default function FeedbackHistoryScreen({
           <View style={styles.bannerContainer}>
             {eventBannerUrl || feedback?.event?.bannerUrl ? (
               <Image
-                source={{ uri: eventBannerUrl || feedback?.event?.bannerUrl }}
+                source={{
+                  uri:
+                    eventBannerUrl || feedback?.event?.bannerUrl || undefined,
+                }}
                 style={styles.eventBanner}
                 resizeMode="cover"
               />
@@ -300,9 +283,18 @@ export default function FeedbackHistoryScreen({
             <View style={styles.feedbackCard}>
               <View style={styles.feedbackHeader}>
                 <Text style={styles.feedbackTitle}>Đánh giá của bạn</Text>
-                <Text style={styles.feedbackDate}>
-                  {formatDate(feedback.createdAt)}
-                </Text>
+                <View style={styles.feedbackDateContainer}>
+                  <Ionicons
+                    name="time-outline"
+                    size={14}
+                    color={COLORS.text}
+                    style={{ opacity: 0.6 }}
+                  />
+                  <Text style={styles.feedbackDate}>
+                    {formatDate(feedback?.createdAt)} -{" "}
+                    {formatTime(feedback?.createdAt)}
+                  </Text>
+                </View>
               </View>
 
               {/* Rating Display */}
@@ -548,6 +540,11 @@ const styles = StyleSheet.create({
     fontSize: FONTS.bodyLarge,
     fontWeight: "700",
     color: COLORS.text,
+  },
+  feedbackDateContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   feedbackDate: {
     fontSize: FONTS.caption,
