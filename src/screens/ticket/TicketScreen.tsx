@@ -195,16 +195,19 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
     if (activeTab === "valid") {
       return ticket.status === "VALID";
     } else {
-      // Loại bỏ các vé đã có feedback
-      const isUsedOrExpired =
+      // Hiển thị tất cả vé đã sử dụng/hủy/hết hạn
+      return (
         ticket.status === "USED" ||
         ticket.status === "CANCELLED" ||
-        ticket.status === "EXPIRED";
-      const hasFeedback =
-        ticket.event?.id && feedbackedEventIds.has(ticket.event.id);
-      return isUsedOrExpired && !hasFeedback;
+        ticket.status === "EXPIRED"
+      );
     }
   });
+
+  // Kiểm tra vé đã feedback chưa
+  const hasTicketFeedback = (ticket: Ticket) => {
+    return ticket.event?.id && feedbackedEventIds.has(ticket.event.id);
+  };
 
   return (
     <View style={styles.container}>
@@ -315,11 +318,17 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
                       activeOpacity={0.7}
                       onPress={() => {
                         if (activeTab === "used") {
-                          navigation.navigate("FeedbackEvent", {
-                            eventId: ticket.event?.id,
-                            eventTitle: ticket.event?.title,
-                            ticketId: ticket.id,
-                          });
+                          // Chỉ cho phép feedback nếu chưa feedback và vé đã USED
+                          if (
+                            !hasTicketFeedback(ticket) &&
+                            ticket.status === "USED"
+                          ) {
+                            navigation.navigate("FeedbackEvent", {
+                              eventId: ticket.event?.id,
+                              eventTitle: ticket.event?.title,
+                              ticketId: ticket.id,
+                            });
+                          }
                         } else {
                           navigation.navigate("TicketDetails", {
                             ticketId: ticket.id,
@@ -418,6 +427,41 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
                           />
                         </TouchableOpacity>
                       )}
+
+                      {/* Feedback button or status for used tickets */}
+                      {ticket.status === "USED" &&
+                        (hasTicketFeedback(ticket) ? (
+                          <View style={styles.feedbackedBadge}>
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={16}
+                              color={COLORS.success}
+                            />
+                            <Text style={styles.feedbackedText}>
+                              Đã đánh giá
+                            </Text>
+                          </View>
+                        ) : (
+                          <TouchableOpacity
+                            style={styles.feedbackButton}
+                            onPress={() =>
+                              navigation.navigate("FeedbackEvent", {
+                                eventId: ticket.event?.id,
+                                eventTitle: ticket.event?.title,
+                                ticketId: ticket.id,
+                              })
+                            }
+                          >
+                            <Text style={styles.feedbackButtonText}>
+                              Gửi đánh giá
+                            </Text>
+                            <Ionicons
+                              name="star"
+                              size={16}
+                              color={COLORS.white}
+                            />
+                          </TouchableOpacity>
+                        ))}
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -625,6 +669,34 @@ const styles = StyleSheet.create({
   },
   viewButtonText: {
     color: COLORS.white,
+    fontSize: FONTS.body,
+    fontWeight: "600",
+  },
+  feedbackButton: {
+    backgroundColor: "#FF9800",
+    paddingVertical: SPACING.md,
+    borderRadius: RADII.button,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: SPACING.xs,
+  },
+  feedbackButtonText: {
+    color: COLORS.white,
+    fontSize: FONTS.body,
+    fontWeight: "600",
+  },
+  feedbackedBadge: {
+    backgroundColor: "#E8F5E9",
+    paddingVertical: SPACING.md,
+    borderRadius: RADII.button,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: SPACING.xs,
+  },
+  feedbackedText: {
+    color: "#4CAF50",
     fontSize: FONTS.body,
     fontWeight: "600",
   },
