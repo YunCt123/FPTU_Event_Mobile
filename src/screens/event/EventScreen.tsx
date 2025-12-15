@@ -53,8 +53,10 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
     []
   );
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const debounceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const isStaff = userRole === "staff";
 
@@ -196,6 +198,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
       } finally {
         console.log("Setting loading to false");
         setLoading(false);
+        setInitialLoad(false);
         setRefreshing(false);
       }
     },
@@ -216,9 +219,33 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userRole]); // Only depend on userRole to avoid infinite loop
 
+  // Debounce search query with 2 second delay
+  useEffect(() => {
+    // Clear previous timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Don't trigger on initial load
+    if (!initialLoad && userRole !== null) {
+      // Set new timer
+      debounceTimerRef.current = setTimeout(() => {
+        console.log("Debounced search triggered:", searchQuery);
+        setAppliedSearch(searchQuery);
+      }, 2000);
+    }
+
+    // Cleanup
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchQuery, userRole, initialLoad]);
+
   // Fetch events when search changes (but only after initial load)
   useEffect(() => {
-    if (userRole !== null && appliedSearch !== "") {
+    if (userRole !== null && appliedSearch !== "" && !initialLoad) {
       console.log(
         "Search changed, fetching events with search:",
         appliedSearch
@@ -239,19 +266,6 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
 
   const filteredEvents = useMemo(() => {
     const sourceEvents = isStaff ? assignedEvents : events;
-    console.log(
-      "Filtering events - sourceEvents count:",
-      sourceEvents.length,
-      "isStaff:",
-      isStaff
-    );
-    console.log(
-      "Filter params - category:",
-      selectedCategory,
-      "searchQuery:",
-      searchQuery
-    );
-
     const filtered = sourceEvents.filter((event) => {
       const matchCategory =
         selectedCategory === "Tất cả" || event.category === selectedCategory;
@@ -444,7 +458,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
               <Text style={styles.errorText}>{errorMessage}</Text>
             )}
 
-            {loading ? (
+            {loading && initialLoad ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={COLORS.primary} />
                 <Text style={styles.loadingText}>
