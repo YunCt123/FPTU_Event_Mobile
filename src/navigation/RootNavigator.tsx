@@ -13,6 +13,7 @@ import { STORAGE_KEYS } from "../api/api";
 import ProfileScreen from "../screens/profile/ProfileScreen";
 import PersonalInfoScreen from "../screens/profile/PersonalInfoScreen";
 import ChangePasswordScreen from "../screens/profile/ChangePasswordScreen";
+import OrganizerRequestScreen from "../screens/profile/OrganizerRequestScreen";
 import EventDetailScreen from "../screens/event/EventDetailScreen";
 import TicketScreen from "../screens/ticket/TicketScreen";
 import TicketDetailScreen from "../screens/ticket/TicketDetailScreen";
@@ -125,6 +126,10 @@ const RootNavigator: React.FC = () => {
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
         <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+        <Stack.Screen
+          name="OrganizerRequest"
+          component={OrganizerRequestScreen}
+        />
         <Stack.Screen name="EventDetails" component={EventDetailScreen} />
         <Stack.Screen name="Ticket" component={TicketScreen} />
         <Stack.Screen name="TicketDetails" component={TicketDetailScreen} />

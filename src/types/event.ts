@@ -21,6 +21,21 @@ export interface Host {
   lastName: string;
 }
 
+export interface Speaker {
+  id: number;
+  name: string;
+  bio: string;
+  avatar: string | null;
+  type: string;
+  company: string;
+}
+
+export interface EventSpeaker {
+  id: number;
+  topic: string;
+  speaker: Speaker;
+}
+
 export type EventStatus = "PUBLISHED" | "DRAFT" | "CANCELLED" | "PENDING";
 
 export interface Event {
@@ -45,4 +60,5 @@ export interface Event {
   organizer: Organizer;
   venue: Venue;
   host: Host;
+  eventSpeakers?: EventSpeaker[];
 }

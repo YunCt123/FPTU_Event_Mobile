@@ -31,6 +31,7 @@ export type RootStackParamList = {
   EditProfile: undefined;
   PersonalInfo: undefined;
   ChangePassword: undefined;
+  OrganizerRequest: undefined;
 
   // Staff Screens
   StaffAssignedEvents: undefined;

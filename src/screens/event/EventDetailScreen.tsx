@@ -316,43 +316,108 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
               </View>
             </View>
 
-            {/* Organizer & Host Card */}
+            {/* Organizer Card */}
             <View style={styles.infoCard}>
               <Text style={styles.cardTitle}>Ban tổ chức</Text>
 
-              <View style={styles.infoRow}>
-                <Ionicons
-                  name="business-outline"
-                  size={20}
-                  color={COLORS.primary}
-                />
-                <View style={styles.infoContent}>
+              <View style={styles.organizerRow}>
+                {event.organizer.logoUrl ? (
+                  <Image
+                    source={{ uri: event.organizer.logoUrl }}
+                    style={styles.organizerLogo}
+                  />
+                ) : (
+                  <View style={styles.organizerLogoPlaceholder}>
+                    <Ionicons
+                      name="business"
+                      size={24}
+                      color={COLORS.primary}
+                    />
+                  </View>
+                )}
+                <View style={styles.organizerContent}>
                   <Text style={styles.infoValue}>{event.organizer.name}</Text>
                   <Text style={styles.infoSubtext}>
                     {event.organizer.description}
                   </Text>
                 </View>
               </View>
+            </View>
 
-              <View style={styles.divider} />
-
-              <View style={styles.infoRow}>
-                <Ionicons
-                  name="person-outline"
-                  size={20}
-                  color={COLORS.primary}
-                />
-                <View style={styles.infoContent}>
-                  <Text style={styles.infoLabel}>Người phụ trách</Text>
-                  <Text style={styles.infoValue}>
+            {/* Host/MC Card */}
+            <View style={styles.infoCard}>
+              <Text style={styles.cardTitle}>Người dẫn chương trình</Text>
+              <View style={styles.hostCard}>
+                <View style={styles.hostAvatarContainer}>
+                  <Ionicons name="mic" size={24} color={COLORS.white} />
+                </View>
+                <View style={styles.hostInfo}>
+                  <Text style={styles.hostName}>
                     {event.host.firstName} {event.host.lastName}
                   </Text>
-                  <Text style={styles.infoSubtext}>
-                    @{event.host.userName} • {event.host.email}
-                  </Text>
+                  <Text style={styles.hostRole}>MC / Host</Text>
+                  <Text style={styles.hostContact}>@{event.host.userName}</Text>
                 </View>
               </View>
             </View>
+
+            {/* Speakers Card */}
+            {event.eventSpeakers && event.eventSpeakers.length > 0 && (
+              <View style={styles.infoCard}>
+                <Text style={styles.cardTitle}>
+                  Diễn giả ({event.eventSpeakers.length})
+                </Text>
+                {event.eventSpeakers.map((eventSpeaker, index) => (
+                  <View key={eventSpeaker.id}>
+                    {index > 0 && <View style={styles.divider} />}
+                    <View style={styles.speakerCard}>
+                      {eventSpeaker.speaker.avatar ? (
+                        <Image
+                          source={{ uri: eventSpeaker.speaker.avatar }}
+                          style={styles.speakerAvatar}
+                        />
+                      ) : (
+                        <View style={styles.speakerAvatarPlaceholder}>
+                          <Ionicons
+                            name="person"
+                            size={24}
+                            color={COLORS.primary}
+                          />
+                        </View>
+                      )}
+                      <View style={styles.speakerInfo}>
+                        <Text style={styles.speakerName}>
+                          {eventSpeaker.speaker.name}
+                        </Text>
+                        <View style={styles.speakerBadge}>
+                          <Ionicons
+                            name="briefcase-outline"
+                            size={12}
+                            color={COLORS.primary}
+                          />
+                          <Text style={styles.speakerCompany}>
+                            {eventSpeaker.speaker.company}
+                          </Text>
+                        </View>
+                        <Text style={styles.speakerBio} numberOfLines={2}>
+                          {eventSpeaker.speaker.bio}
+                        </Text>
+                        <View style={styles.topicContainer}>
+                          <Ionicons
+                            name="chatbubble-outline"
+                            size={12}
+                            color={COLORS.text}
+                          />
+                          <Text style={styles.speakerTopic} numberOfLines={1}>
+                            {eventSpeaker.topic}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
 
             {/* Global Badge */}
             {event.isGlobal && (
@@ -606,6 +671,126 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sm,
     color: COLORS.primary,
     fontWeight: "600",
+  },
+  // Organizer styles
+  organizerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+  },
+  organizerLogo: {
+    width: 56,
+    height: 56,
+    borderRadius: RADII.lg,
+  },
+  organizerLogoPlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: RADII.lg,
+    backgroundColor: COLORS.background,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  organizerContent: {
+    flex: 1,
+  },
+  // Host/MC styles
+  hostCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+    backgroundColor: COLORS.background,
+    padding: SPACING.md,
+    borderRadius: RADII.lg,
+  },
+  hostAvatarContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.primary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  hostInfo: {
+    flex: 1,
+  },
+  hostName: {
+    fontSize: FONTS.md,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: 2,
+  },
+  hostRole: {
+    fontSize: FONTS.sm,
+    color: COLORS.primary,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  hostContact: {
+    fontSize: FONTS.xs,
+    color: COLORS.text,
+    opacity: 0.6,
+  },
+  // Speaker styles
+  speakerCard: {
+    flexDirection: "row",
+    gap: SPACING.md,
+    paddingVertical: SPACING.sm,
+  },
+  speakerAvatar: {
+    width: 64,
+    height: 64,
+    borderRadius: RADII.lg,
+  },
+  speakerAvatarPlaceholder: {
+    width: 64,
+    height: 64,
+    borderRadius: RADII.lg,
+    backgroundColor: COLORS.background,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  speakerInfo: {
+    flex: 1,
+  },
+  speakerName: {
+    fontSize: FONTS.md,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  speakerBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 4,
+  },
+  speakerCompany: {
+    fontSize: FONTS.xs,
+    color: COLORS.primary,
+    fontWeight: "600",
+  },
+  speakerBio: {
+    fontSize: FONTS.sm,
+    color: COLORS.text,
+    opacity: 0.7,
+    lineHeight: 18,
+    marginBottom: 6,
+  },
+  topicContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: COLORS.background,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 4,
+    borderRadius: RADII.sm,
+    alignSelf: "flex-start",
+  },
+  speakerTopic: {
+    fontSize: FONTS.xs,
+    color: COLORS.text,
+    opacity: 0.8,
   },
   footer: {
     position: "absolute",
