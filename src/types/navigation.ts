@@ -17,12 +17,13 @@ export type RootStackParamList = {
   EventList: undefined;
   EventDetails: { eventId: string };
   MyEvents: undefined;
+  FeedbackEvent: undefined;
 
-    // Ticket Screens
-    Ticket: undefined;
-    TicketDetails: { ticketId: string };
-    TicketQRCode: { ticketId: string };
-    TicketHistory: undefined;
+  // Ticket Screens
+  Ticket: undefined;
+  TicketDetails: { ticketId: string };
+  TicketQRCode: { ticketId: string };
+  TicketHistory: undefined;
 
   // Profile Screens
   Profile: undefined;
@@ -30,12 +31,12 @@ export type RootStackParamList = {
   PersonalInfo: undefined;
   ChangePassword: undefined;
 
-    // Staff Screens
-    StaffAssignedEvents: undefined;
-    StaffEventDetail: { eventId: string };
-    IncidentReport: { eventId: string; eventTitle?: string };
-    IncidentHistory: undefined;
-    StaffScan: { eventId: string; eventTitle?: string };
+  // Staff Screens
+  StaffAssignedEvents: undefined;
+  StaffEventDetail: { eventId: string };
+  IncidentReport: { eventId: string; eventTitle?: string };
+  IncidentHistory: undefined;
+  StaffScan: { eventId: string; eventTitle?: string };
 };
 
 export type AuthStackParamList = {

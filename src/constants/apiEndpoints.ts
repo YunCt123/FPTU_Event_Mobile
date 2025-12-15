@@ -67,3 +67,8 @@ export const NOTIFICATION_ENDPOINTS = {
   SUBSCRIPTIONS: "/notifications/subscriptions",
   TEST_SEND: "/notifications/test-send",
 };
+
+export const FEEDBACK_ENDPOINTS = {
+  CREATE: "/feedback",
+  MY: "feedback/my-feedbacks",
+};

@@ -17,6 +17,7 @@ import { ActionResultModal, ActionResultType } from "../../components";
 import { ticketService } from "../../services/ticketService";
 import { Ticket, TicketStatus } from "../../types/ticket";
 import { socketService, CheckinPayload } from "../../services/socketService";
+import { feedbackService } from "../../services/feedbackService";
 
 type TicketScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -43,6 +44,9 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [feedbackedEventIds, setFeedbackedEventIds] = useState<Set<string>>(
+    new Set()
+  );
 
   // Modal state
   const [modalVisible, setModalVisible] = useState(false);
@@ -59,14 +63,23 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
           setLoading(true);
         }
 
-        const response = await ticketService.getMyTickets({
-          page: pageNum,
-          limit: 10,
-        });
+        const [ticketResponse, feedbackResponse] = await Promise.all([
+          ticketService.getMyTickets({
+            page: pageNum,
+            limit: 10,
+          }),
+          feedbackService.getMyFeedbacks().catch(() => []),
+        ]);
 
-        setTickets(response.data || []);
-        setTotalPages(response.meta?.totalPages || 1);
+        setTickets(ticketResponse.data || []);
+        setTotalPages(ticketResponse.meta?.totalPages || 1);
         setPage(pageNum);
+
+        // Lưu danh sách eventIds đã feedback
+        const feedbackedIds = new Set(
+          feedbackResponse.map((f: any) => f.eventId).filter(Boolean)
+        );
+        setFeedbackedEventIds(feedbackedIds);
       } catch (error) {
         console.error("Failed to fetch tickets", error);
         setModalType("error");
@@ -182,11 +195,14 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
     if (activeTab === "valid") {
       return ticket.status === "VALID";
     } else {
-      return (
+      // Loại bỏ các vé đã có feedback
+      const isUsedOrExpired =
         ticket.status === "USED" ||
         ticket.status === "CANCELLED" ||
-        ticket.status === "EXPIRED"
-      );
+        ticket.status === "EXPIRED";
+      const hasFeedback =
+        ticket.event?.id && feedbackedEventIds.has(ticket.event.id);
+      return isUsedOrExpired && !hasFeedback;
     }
   });
 
@@ -237,10 +253,7 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[
-                    styles.tab,
-                    activeTab === "used" && styles.tabActive,
-                  ]}
+                  style={[styles.tab, activeTab === "used" && styles.tabActive]}
                   onPress={() => setActiveTab("used")}
                 >
                   <Text
@@ -301,9 +314,16 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
                       style={styles.ticketCard}
                       activeOpacity={0.7}
                       onPress={() => {
-                        navigation.navigate("TicketDetails", {
-                          ticketId: ticket.id,
-                        });
+                        if (activeTab === "used") {
+                          navigation.navigate("FeedbackEvent", {
+                            eventId: ticket.event?.id,
+                            eventTitle: ticket.event?.title,
+                          });
+                        } else {
+                          navigation.navigate("TicketDetails", {
+                            ticketId: ticket.id,
+                          });
+                        }
                       }}
                     >
                       <View style={styles.ticketHeader}>
