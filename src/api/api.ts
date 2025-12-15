@@ -56,8 +56,10 @@ apiClient.interceptors.response.use(
         );
 
         if (refreshToken) {
+          // Remove trailing slash from BASE_URL if exists to avoid double slashes
+          const baseUrl = API_CONFIG.BASE_URL?.replace(/\/+$/, "") || "";
           const response = await axios.post(
-            `${API_CONFIG.BASE_URL}/auth/refresh`,
+            `${baseUrl}/auth/refresh`,
             { refreshToken },
             { timeout: API_CONFIG.TIMEOUT }
           );

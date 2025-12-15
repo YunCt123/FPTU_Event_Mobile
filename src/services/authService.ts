@@ -9,6 +9,14 @@ import {
   RegisterResponse,
   RegisterSuccessResponse,
   GoogleLoginResponse,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
+  VerifyOtpRequest,
+  VerifyOtpResponse,
+  ResetPasswordRequest,
+  ResetPasswordResponse,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
 } from "../types/auth";
 import { User, UpdateUserProfileRequest } from "../types/user";
 
@@ -77,6 +85,40 @@ class AuthService {
     response: RegisterResponse
   ): response is RegisterSuccessResponse {
     return "accessToken" in response;
+  }
+
+  async forgotPassword(
+    payload: ForgotPasswordRequest
+  ): Promise<ForgotPasswordResponse> {
+    return await api.post<ForgotPasswordResponse>(
+      AUTH_ENDPOINTS.FORGOT_PASSWORD,
+      payload
+    );
+  }
+
+  async verifyOtp(payload: VerifyOtpRequest): Promise<VerifyOtpResponse> {
+    return await api.post<VerifyOtpResponse>(
+      AUTH_ENDPOINTS.VERIFY_OTP,
+      payload
+    );
+  }
+
+  async resetPassword(
+    payload: ResetPasswordRequest
+  ): Promise<ResetPasswordResponse> {
+    return await api.post<ResetPasswordResponse>(
+      AUTH_ENDPOINTS.RESET_PASSWORD,
+      payload
+    );
+  }
+
+  async changePassword(
+    payload: ChangePasswordRequest
+  ): Promise<ChangePasswordResponse> {
+    return await api.post<ChangePasswordResponse>(
+      AUTH_ENDPOINTS.CHANGE_PASSWORD,
+      payload
+    );
   }
 }
 

@@ -15,8 +15,8 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
   descriptors,
   navigation,
 }) => {
-  // Định nghĩa các route được hiển thị (bỏ Profile)
-  const visibleRoutes = ["Home", "Event", "Ticket"];
+  // Định nghĩa các route được hiển thị
+  const visibleRoutes = ["Home", "Event", "Profile"];
 
   const getIconName = (routeName: string, focused: boolean): string => {
     switch (routeName) {
@@ -24,8 +24,8 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
         return focused ? "home" : "home-outline";
       case "Event":
         return focused ? "calendar" : "calendar-outline";
-      case "Ticket":
-        return focused ? "ticket" : "ticket-outline";
+      case "Profile":
+        return focused ? "person" : "person-outline";
       default:
         return "home-outline";
     }
@@ -37,8 +37,8 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
         return "Trang chủ";
       case "Event":
         return "Sự kiện";
-      case "Ticket":
-        return "Vé của tôi";
+      case "Profile":
+        return "Hồ sơ";
       default:
         return routeName;
     }
@@ -52,98 +52,126 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
   // Tìm index của Event trong orderedRoutes
   const eventIndex = orderedRoutes.findIndex((route) => route.name === "Event");
 
+  if (!state.routes || state.routes.length === 0) {
+    return null;
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.tabBar}>
-        {orderedRoutes.map((route, index) => {
-          const { options } = descriptors[route.key];
-          const isFocused =
-            state.index ===
-            state.routes.findIndex((r) => r.name === route.name);
-          const isEventTab = route.name === "Event";
-
-          const onPress = () => {
-            const event = navigation.emit({
-              type: "tabPress",
-              target: route.key,
-              canPreventDefault: true,
-            });
-
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name);
+        {orderedRoutes
+          .filter(
+            (route) => route && route.key && descriptors[route.key]?.options
+          )
+          .map((route, index) => {
+            if (!route || !route.key || !descriptors[route.key]) {
+              return null;
             }
-          };
 
-          const onLongPress = () => {
-            navigation.emit({
-              type: "tabLongPress",
-              target: route.key,
-            });
-          };
+            const { options } = descriptors[route.key];
+            if (!options) return null;
 
-          // Tab Sự kiện ở giữa - nổi bật
-          if (isEventTab) {
-            return (
-              <TouchableOpacity
-                key={route.key}
-                accessibilityRole="button"
-                accessibilityState={isFocused ? { selected: true } : {}}
-                accessibilityLabel={options.tabBarAccessibilityLabel}
-                onPress={onPress}
-                onLongPress={onLongPress}
-                style={styles.centerTabWrapper}
-              >
-                <View
-                  style={[
-                    styles.centerTab,
-                    isFocused && styles.centerTabFocused,
-                  ]}
+            try {
+              const routeName = String(route.name || "");
+              const isFocused =
+                state.index ===
+                state.routes.findIndex((r) => r.name === routeName);
+              const isEventTab = routeName === "Event";
+
+              const iconName = getIconName(routeName, isFocused);
+              const label = String(getLabel(routeName) || routeName || "Tab");
+
+              const onPress = () => {
+                const event = navigation.emit({
+                  type: "tabPress",
+                  target: route.key,
+                  canPreventDefault: true,
+                });
+
+                if (!isFocused && !event.defaultPrevented) {
+                  navigation.navigate(routeName);
+                }
+              };
+
+              const onLongPress = () => {
+                navigation.emit({
+                  type: "tabLongPress",
+                  target: route.key,
+                });
+              };
+
+              // Tab Sự kiện ở giữa - nổi bật
+              if (isEventTab) {
+                return (
+                  <TouchableOpacity
+                    key={route.key}
+                    accessibilityRole="button"
+                    accessibilityState={isFocused ? { selected: true } : {}}
+                    accessibilityLabel={String(
+                      options.tabBarAccessibilityLabel || label
+                    )}
+                    onPress={onPress}
+                    onLongPress={onLongPress}
+                    style={styles.centerTabWrapper}
+                  >
+                    <View
+                      style={[
+                        styles.centerTab,
+                        isFocused && styles.centerTabFocused,
+                      ]}
+                    >
+                      <Ionicons
+                        name={iconName as any}
+                        size={28}
+                        color={COLORS.white}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.centerLabel,
+                        isFocused && styles.centerLabelFocused,
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              }
+
+              // Các tab thường
+              return (
+                <TouchableOpacity
+                  key={route.key}
+                  accessibilityRole="button"
+                  accessibilityState={isFocused ? { selected: true } : {}}
+                  accessibilityLabel={String(
+                    options.tabBarAccessibilityLabel || label
+                  )}
+                  onPress={onPress}
+                  onLongPress={onLongPress}
+                  style={styles.tabItem}
                 >
                   <Ionicons
-                    name={getIconName(route.name, isFocused) as any}
-                    size={28}
-                    color={COLORS.white}
+                    name={iconName as any}
+                    size={24}
+                    color={isFocused ? COLORS.primary : COLORS.text}
                   />
-                </View>
-                <Text
-                  style={[
-                    styles.centerLabel,
-                    isFocused && styles.centerLabelFocused,
-                  ]}
-                >
-                  {getLabel(route.name)}
-                </Text>
-              </TouchableOpacity>
-            );
-          }
-
-          // Các tab thường
-          return (
-            <TouchableOpacity
-              key={route.key}
-              accessibilityRole="button"
-              accessibilityState={isFocused ? { selected: true } : {}}
-              accessibilityLabel={options.tabBarAccessibilityLabel}
-              onPress={onPress}
-              onLongPress={onLongPress}
-              style={styles.tabItem}
-            >
-              <Ionicons
-                name={getIconName(route.name, isFocused) as any}
-                size={24}
-                color={isFocused ? COLORS.primary : COLORS.text}
-              />
-              <Text
-                style={[
-                  styles.tabLabel,
-                  { color: isFocused ? COLORS.primary : COLORS.text },
-                ]}
-              >
-                {getLabel(route.name)}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+                  <Text
+                    style={[
+                      styles.tabLabel,
+                      { color: isFocused ? COLORS.primary : COLORS.text },
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            } catch (error) {
+              console.error("Error rendering tab:", error);
+              return null;
+            }
+          })
+          .filter(Boolean)}
       </View>
     </View>
   );

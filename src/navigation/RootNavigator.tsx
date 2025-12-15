@@ -12,7 +12,9 @@ import MainNavigator from "./MainNavigator";
 import { STORAGE_KEYS } from "../api/api";
 import ProfileScreen from "../screens/profile/ProfileScreen";
 import PersonalInfoScreen from "../screens/profile/PersonalInfoScreen";
+import ChangePasswordScreen from "../screens/profile/ChangePasswordScreen";
 import EventDetailScreen from "../screens/event/EventDetailScreen";
+import TicketScreen from "../screens/ticket/TicketScreen";
 import TicketDetailScreen from "../screens/ticket/TicketDetailScreen";
 import TicketQRCodeScreen from "../screens/ticket/TicketQRCodeScreen";
 import TicketHistoryScreen from "../screens/ticket/TicketHistoryScreen";
@@ -21,6 +23,7 @@ import IncidentReportScreen from "../screens/staff/IncidentReportScreen";
 import IncidentHistoryScreen from "../screens/staff/IncidentHistoryScreen";
 import { RootStackParamList } from "../types/navigation";
 import TicketScanScreen from "../screens/staff/TicketScanScreen";
+import FeedbackEventScreen from "../screens/ticket/FeedbackEventScreen";
 
 export type { RootStackParamList };
 
@@ -120,10 +123,13 @@ const RootNavigator: React.FC = () => {
         <Stack.Screen name="Main" component={MainNavigator} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
+        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
         <Stack.Screen name="EventDetails" component={EventDetailScreen} />
+        <Stack.Screen name="Ticket" component={TicketScreen} />
         <Stack.Screen name="TicketDetails" component={TicketDetailScreen} />
         <Stack.Screen name="TicketQRCode" component={TicketQRCodeScreen} />
         <Stack.Screen name="TicketHistory" component={TicketHistoryScreen} />
+        <Stack.Screen name="FeedbackEvent" component={FeedbackEventScreen} />
 
         {/* Staff Screens */}
         <Stack.Screen

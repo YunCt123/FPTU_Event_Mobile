@@ -17,29 +17,33 @@ export type RootStackParamList = {
   EventList: undefined;
   EventDetails: { eventId: string };
   MyEvents: undefined;
+  FeedbackEvent: undefined;
 
-    // Ticket Screens
-    TicketDetails: { ticketId: string };
-    TicketQRCode: { ticketId: string };
-    TicketHistory: undefined;
+  // Ticket Screens
+  Ticket: undefined;
+  TicketDetails: { ticketId: string };
+  TicketQRCode: { ticketId: string };
+  TicketHistory: undefined;
 
   // Profile Screens
   Profile: undefined;
   EditProfile: undefined;
   PersonalInfo: undefined;
+  ChangePassword: undefined;
 
-    // Staff Screens
-    StaffAssignedEvents: undefined;
-    StaffEventDetail: { eventId: string };
-    IncidentReport: { eventId: string; eventTitle?: string };
-    IncidentHistory: undefined;
-    StaffScan: { eventId: string; eventTitle?: string };
+  // Staff Screens
+  StaffAssignedEvents: undefined;
+  StaffEventDetail: { eventId: string };
+  IncidentReport: { eventId: string; eventTitle?: string };
+  IncidentHistory: undefined;
+  StaffScan: { eventId: string; eventTitle?: string };
 };
 
 export type AuthStackParamList = {
   AuthLanding: { registerMessage?: string } | undefined;
   Login: undefined;
   Register: undefined;
+  ForgotPassword: undefined;
   RegisterAdditional: {
     userName: string;
     firstName: string;
@@ -58,7 +62,7 @@ export type AuthStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Event: undefined;
-  Ticket: undefined;
+  Profile: undefined;
 };
 
 export type RootStackNavigationProp =

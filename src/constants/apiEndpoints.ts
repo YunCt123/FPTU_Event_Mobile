@@ -12,9 +12,13 @@ export const API_CONFIG = {
 export const AUTH_ENDPOINTS = {
   REGISTER: "/auth/register",
   LOGIN: "/auth/login",
-  REFRESH: "/auth/refresh",
+  REFRESH: "auth/refresh",
   GOOGLE: "auth/google",
   GOOGLE_CALLBACK: "auth/google/callback",
+  FORGOT_PASSWORD: "/auth/forgot-password",
+  VERIFY_OTP: "/auth/verify-otp",
+  RESET_PASSWORD: "/auth/reset-password",
+  CHANGE_PASSWORD: "/auth/change-password",
 };
 
 export const USER_ENDPOINTS = {
@@ -38,6 +42,7 @@ export const TICKET_ENDPOINTS = {
   BY_ID: (id: string) => `/tickets/${id}`,
   BY_QR: (qrCode: string) => `/tickets/qr/${qrCode}`,
   SCAN: "/tickets/scan",
+  MANUAL_CHECKIN: "/tickets/manual-checkin",
 };
 
 export const SEAT_ENDPOINTS = {
@@ -61,4 +66,9 @@ export const INCIDENT_ENDPOINTS = {
 export const NOTIFICATION_ENDPOINTS = {
   SUBSCRIPTIONS: "/notifications/subscriptions",
   TEST_SEND: "/notifications/test-send",
+};
+
+export const FEEDBACK_ENDPOINTS = {
+  CREATE: "/feedback",
+  MY: "feedback/my-feedbacks",
 };

@@ -50,6 +50,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
       console.log("Login success:", res);
 
+      // Lấy và lưu thông tin user vào AsyncStorage trước khi navigate
+      try {
+        const user = await authService.getCurrentUser();
+        console.log("User data loaded:", user);
+      } catch (userError) {
+        console.warn("Failed to load user data:", userError);
+      }
+
       // Đăng ký subscription với backend sau khi login thành công
       try {
         await notificationService.registerSubscription();
@@ -131,7 +139,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 />
               </View>
 
-              <TouchableOpacity style={styles.forgotPassword}>
+              <TouchableOpacity
+                style={styles.forgotPassword}
+                onPress={() => navigation.navigate("ForgotPassword")}
+              >
                 <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
               </TouchableOpacity>
 
