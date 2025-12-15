@@ -10,5 +10,3 @@ class CampusService {
 }
 
 export const campusService = new CampusService();
-
-
