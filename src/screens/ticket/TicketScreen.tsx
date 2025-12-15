@@ -318,6 +318,7 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
                           navigation.navigate("FeedbackEvent", {
                             eventId: ticket.event?.id,
                             eventTitle: ticket.event?.title,
+                            ticketId: ticket.id,
                           });
                         } else {
                           navigation.navigate("TicketDetails", {

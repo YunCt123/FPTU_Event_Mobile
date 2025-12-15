@@ -4,6 +4,7 @@ export interface feedback {
   rating: number;
   comment: string;
   eventId: string;
+  ticketId: string;
   skipTimeValidation: boolean;
 }
 
