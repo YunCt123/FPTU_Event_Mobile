@@ -18,6 +18,7 @@ export type RootStackParamList = {
   EventDetails: { eventId: string };
   MyEvents: undefined;
   FeedbackEvent: undefined;
+  FeedbackHistory: undefined;
 
   // Ticket Screens
   Ticket: undefined;

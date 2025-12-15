@@ -21,7 +21,7 @@ import ActionResultModal from "../../components/ActionResultModal";
 type FeedbackEventScreenProps = {
   navigation: NativeStackNavigationProp<any>;
   route: RouteProp<
-    { params: { eventId: string; eventTitle?: string } },
+    { params: { eventId: string; eventTitle?: string; ticketId: string } },
     "params"
   >;
 };
@@ -32,7 +32,7 @@ const FeedbackEventScreen: React.FC<FeedbackEventScreenProps> = ({
   navigation,
   route,
 }) => {
-  const { eventId, eventTitle } = route.params;
+  const { eventId, eventTitle, ticketId } = route.params;
   const [rating, setRating] = useState<number>(0);
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
@@ -60,6 +60,7 @@ const FeedbackEventScreen: React.FC<FeedbackEventScreenProps> = ({
         rating,
         comment: comment.trim(),
         eventId,
+        ticketId,
         skipTimeValidation: true,
       });
 
