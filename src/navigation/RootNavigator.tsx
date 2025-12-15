@@ -24,6 +24,7 @@ import IncidentHistoryScreen from "../screens/staff/IncidentHistoryScreen";
 import { RootStackParamList } from "../types/navigation";
 import TicketScanScreen from "../screens/staff/TicketScanScreen";
 import FeedbackEventScreen from "../screens/ticket/FeedbackEventScreen";
+import FeedbackHistoryScreen from "../screens/ticket/FeedbackHistoryScreen";
 
 export type { RootStackParamList };
 
@@ -130,6 +131,10 @@ const RootNavigator: React.FC = () => {
         <Stack.Screen name="TicketQRCode" component={TicketQRCodeScreen} />
         <Stack.Screen name="TicketHistory" component={TicketHistoryScreen} />
         <Stack.Screen name="FeedbackEvent" component={FeedbackEventScreen} />
+        <Stack.Screen
+          name="FeedbackHistory"
+          component={FeedbackHistoryScreen}
+        />
 
         {/* Staff Screens */}
         <Stack.Screen

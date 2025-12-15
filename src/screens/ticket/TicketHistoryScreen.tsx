@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,11 +11,13 @@ import {
   Image,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { ticketService } from "../../services/ticketService";
 import { Ticket, TicketStatus } from "../../types/ticket";
+import { feedbackService } from "../../services/feedbackService";
 
 type TicketHistoryScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -27,11 +29,30 @@ export default function TicketHistoryScreen({
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [feedbackedEventIds, setFeedbackedEventIds] = useState<Set<string>>(
+    new Set()
+  );
 
-  const loadTickets = async () => {
+  const loadTickets = async (isRefresh: boolean = false) => {
     try {
-      const response = await ticketService.getMyTickets();
-      setTickets(response.data);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
+      const [ticketResponse, feedbackResponse] = await Promise.all([
+        ticketService.getMyTickets(),
+        feedbackService.getMyFeedbacks().catch(() => []),
+      ]);
+
+      setTickets(ticketResponse.data);
+
+      // Lưu danh sách eventIds đã feedback
+      const feedbackedIds = new Set(
+        feedbackResponse.map((f: any) => f.eventId).filter(Boolean)
+      );
+      setFeedbackedEventIds(feedbackedIds);
     } catch (error: any) {
       console.error("Error loading tickets:", error);
       Alert.alert(
@@ -48,9 +69,14 @@ export default function TicketHistoryScreen({
     loadTickets();
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      loadTickets(true);
+    }, [])
+  );
+
   const onRefresh = () => {
-    setRefreshing(true);
-    loadTickets();
+    loadTickets(true);
   };
 
   const getStatusColor = (status: TicketStatus) => {
@@ -128,7 +154,28 @@ export default function TicketHistoryScreen({
   };
 
   const handleTicketPress = (ticket: Ticket) => {
-    navigation.navigate("TicketDetails", { ticketId: ticket.id });
+    // Nếu sự kiện đã có feedback, navigate sang FeedbackHistory với eventId
+    if (ticket.event?.id && feedbackedEventIds.has(ticket.event.id)) {
+      navigation.navigate("FeedbackHistory", {
+        eventId: ticket.event.id,
+        eventTitle: ticket.event.title,
+        eventBannerUrl: ticket.event.bannerUrl,
+        eventStartTime: ticket.event.startTime,
+        eventVenueName: ticket.event.venue?.name,
+      });
+    } else if (
+      ticket.status === "USED" ||
+      ticket.status === "EXPIRED" ||
+      ticket.status === "CANCELLED"
+    ) {
+      // Nếu vé đã sử dụng nhưng chưa feedback, navigate sang FeedbackEvent
+      navigation.navigate("FeedbackEvent", {
+        eventId: ticket.event?.id,
+        eventTitle: ticket.event?.title,
+      });
+    } else {
+      navigation.navigate("TicketDetails", { ticketId: ticket.id });
+    }
   };
 
   if (loading) {
@@ -172,9 +219,7 @@ export default function TicketHistoryScreen({
                 size={80}
                 color={COLORS.textSecondary}
               />
-              <Text style={styles.emptyText}>
-                Bạn chưa đăng ký sự kiện nào
-              </Text>
+              <Text style={styles.emptyText}>Bạn chưa đăng ký sự kiện nào</Text>
             </View>
           ) : (
             <View style={styles.ticketsContainer}>
@@ -277,7 +322,8 @@ export default function TicketHistoryScreen({
                             color={COLORS.textSecondary}
                           />
                           <Text style={styles.infoText}>
-                            Ghế: Hàng {ticket.seat?.rowLabel || "N/A"}, Ghế {ticket.seat?.colLabel || "N/A"}
+                            Ghế: Hàng {ticket.seat?.rowLabel || "N/A"}, Ghế{" "}
+                            {ticket.seat?.colLabel || "N/A"}
                           </Text>
                         </View>
                       )}
