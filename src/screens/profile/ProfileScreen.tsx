@@ -133,14 +133,27 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
   const renderMenuItems = () => {
     const isStaff = user?.roleName?.toLowerCase() === "staff";
-    
+    const isStudent = user?.roleName?.toLowerCase() === "student";
+
     // Filter menu items - ẩn "Lịch sử đăng ký" (id="2") nếu là staff
     const baseMenuItems = MENU_ITEMS.filter(
       (item) => !(isStaff && item.id === "2")
     );
-    
+
     const items = [
       ...baseMenuItems,
+      // Menu items cho Student - đăng ký trở thành Organizer
+      ...(isStudent
+        ? [
+            {
+              id: "organizer-request",
+              icon: "business",
+              title: "Đăng ký Organizer",
+              subtitle: "Gửi đơn xin tạo câu lạc bộ",
+            },
+          ]
+        : []),
+      // Menu items cho Staff
       ...(isStaff
         ? [
             {
@@ -173,6 +186,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                 navigation.navigate("TicketHistory");
               } else if (item.id === "3") {
                 navigation.navigate("ChangePassword");
+              } else if (item.id === "organizer-request") {
+                navigation.navigate("OrganizerRequest");
               } else if (item.id === "staff-events") {
                 navigation.navigate("StaffAssignedEvents");
               } else if (item.id === "incident-history") {
