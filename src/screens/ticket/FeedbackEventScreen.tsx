@@ -16,7 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { feedbackService } from "../../services/feedbackService";
-import CustomAlertModal from "../../components/CustomAlertModal";
+import ActionResultModal from "../../components/ActionResultModal";
 
 type FeedbackEventScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -210,12 +210,14 @@ const FeedbackEventScreen: React.FC<FeedbackEventScreenProps> = ({
         </ScrollView>
 
         {/* Alert Modal */}
-        <CustomAlertModal
+        <ActionResultModal
           visible={alertConfig.visible}
           type={alertConfig.type}
           title={alertConfig.title}
           message={alertConfig.message}
           onClose={handleAlertClose}
+          buttonText={alertConfig.type === "success" ? "Hoàn tất" : "Đóng"}
+          showConfetti={alertConfig.type === "success"}
         />
       </LinearGradient>
     </KeyboardAvoidingView>

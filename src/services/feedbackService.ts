@@ -1,6 +1,6 @@
 import { api } from "../api/api";
 import { FEEDBACK_ENDPOINTS } from "../constants";
-import { feedback } from "../types/feedback";
+import { feedback, myFeedback } from "../types/feedback";
 
 class FeedbackService {
   async sendFeedback(params: feedback) {
@@ -10,8 +10,8 @@ class FeedbackService {
     );
     return response;
   }
-  async getMyFeedbacks(): Promise<feedback[]> {
-    const data = await api.get<feedback[]>(FEEDBACK_ENDPOINTS.MY);
+  async getMyFeedbacks(): Promise<myFeedback[]> {
+    const data = await api.get<myFeedback[]>(FEEDBACK_ENDPOINTS.MY);
     return data;
   }
 }
