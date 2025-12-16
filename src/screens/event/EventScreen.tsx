@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  FlatList,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
@@ -54,6 +55,9 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
   );
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const isStaff = userRole === "staff";
@@ -99,15 +103,18 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
     async (
       searchValue: string,
       isRefresh: boolean = false,
-      role: string | null = userRole
+      role: string | null = userRole,
+      pageNum: number = 1
     ) => {
       const isStaffRole = role === "staff";
 
       try {
         if (isRefresh) {
           setRefreshing(true);
-        } else {
+        } else if (pageNum === 1) {
           setLoading(true);
+        } else {
+          setLoadingMore(true);
         }
         setErrorMessage(null);
 
@@ -134,6 +141,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
               );
               setAssignedEvents([]);
             }
+            setHasMore(false); // Staff events don't have pagination
           } catch (staffError: any) {
             console.error("Error fetching assigned events:", staffError);
             setAssignedEvents([]);
@@ -146,7 +154,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
             page: number;
             limit: number;
           } = {
-            page,
+            page: pageNum,
             limit: DEFAULT_PAGE_SIZE,
           };
 
@@ -160,18 +168,35 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
           console.log("Events response:", response);
 
           // Handle different response formats
+          let newEvents: Event[] = [];
+          let meta = { page: 1, totalPages: 1 };
+
           if (Array.isArray(response)) {
-            setEvents(response);
+            newEvents = response;
           } else if (
             response &&
             typeof response === "object" &&
             "data" in response
           ) {
-            setEvents(Array.isArray(response.data) ? response.data : []);
+            newEvents = Array.isArray(response.data) ? response.data : [];
+            if ("meta" in response && response.meta) {
+              meta = response.meta as { page: number; totalPages: number };
+            }
           } else {
             console.warn("Unexpected response format:", response);
-            setEvents([]);
+            newEvents = [];
           }
+
+          // Update state based on page number
+          if (pageNum === 1) {
+            setEvents(newEvents);
+          } else {
+            setEvents((prev) => [...prev, ...newEvents]);
+          }
+
+          setPage(pageNum);
+          setTotalPages(meta.totalPages);
+          setHasMore(pageNum < meta.totalPages);
         }
       } catch (error: any) {
         console.error("Failed to fetch events", error);
@@ -197,9 +222,10 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
         console.log("Setting loading to false");
         setLoading(false);
         setRefreshing(false);
+        setLoadingMore(false);
       }
     },
-    [page, userRole]
+    [userRole]
   );
 
   // Fetch events when userRole is first set
@@ -229,12 +255,32 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
   }, [appliedSearch]);
 
   const onRefresh = useCallback(() => {
-    fetchEvents(appliedSearch, true);
-  }, [fetchEvents, appliedSearch]);
+    setPage(1);
+    setHasMore(true);
+    fetchEvents(appliedSearch, true, userRole, 1);
+  }, [fetchEvents, appliedSearch, userRole]);
+
+  const loadMoreEvents = useCallback(() => {
+    if (!loadingMore && hasMore && !isStaff) {
+      const nextPage = page + 1;
+      console.log("Loading more events, page:", nextPage);
+      fetchEvents(appliedSearch, false, userRole, nextPage);
+    }
+  }, [
+    loadingMore,
+    hasMore,
+    isStaff,
+    page,
+    fetchEvents,
+    appliedSearch,
+    userRole,
+  ]);
 
   const handleSearchSubmit = () => {
     setPage(1);
+    setHasMore(true);
     setAppliedSearch(searchQuery);
+    fetchEvents(searchQuery, false, userRole, 1);
   };
 
   const filteredEvents = useMemo(() => {
@@ -305,6 +351,290 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
     }
   };
 
+  // Render footer for FlatList (loading more indicator)
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    return (
+      <View style={styles.footerLoading}>
+        <ActivityIndicator size="small" color={COLORS.primary} />
+        <Text style={styles.footerLoadingText}>Đang tải thêm...</Text>
+      </View>
+    );
+  };
+
+  // Render student event card
+  const renderStudentEventCard = ({ item: event }: { item: Event }) => (
+    <TouchableOpacity
+      style={styles.eventCard}
+      activeOpacity={0.7}
+      onPress={() => handleEventPress(event)}
+    >
+      <View style={styles.eventHeader}>
+        <View style={styles.eventIconContainer}>
+          <Ionicons name="calendar" size={24} color={COLORS.primary} />
+        </View>
+        <View
+          style={[
+            styles.categoryBadge,
+            { backgroundColor: STATUS_COLORS[event.status] },
+          ]}
+        >
+          <Text style={styles.categoryBadgeText}>{event.status}</Text>
+        </View>
+      </View>
+
+      <Text style={styles.eventTitle}>{event.title}</Text>
+      <Text style={styles.eventDescription} numberOfLines={2}>
+        {event.description}
+      </Text>
+
+      <View style={styles.eventDetails}>
+        <View style={styles.eventDetail}>
+          <Ionicons
+            name="calendar-outline"
+            size={14}
+            color={COLORS.text}
+            style={{ opacity: 0.7 }}
+          />
+          <Text style={styles.detailText}>{formatDate(event.startTime)}</Text>
+        </View>
+        <View style={styles.eventDetail}>
+          <Ionicons
+            name="time-outline"
+            size={14}
+            color={COLORS.text}
+            style={{ opacity: 0.7 }}
+          />
+          <Text style={styles.detailText}>{formatTime(event.startTime)}</Text>
+        </View>
+      </View>
+
+      <View style={styles.eventDetails}>
+        <View style={styles.eventDetail}>
+          <Ionicons
+            name="location-outline"
+            size={14}
+            color={COLORS.text}
+            style={{ opacity: 0.7 }}
+          />
+          <Text style={styles.detailText}>
+            {event.venue?.name ?? "Đang cập nhật"}
+          </Text>
+        </View>
+        <View style={styles.eventDetail}>
+          <Ionicons
+            name="people-outline"
+            size={14}
+            color={COLORS.text}
+            style={{ opacity: 0.7 }}
+          />
+          <Text style={styles.detailText}>
+            {event.registeredCount}/{event.maxCapacity} người
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.organizerInfo}>
+        <Text style={styles.organizerLabel}>Tổ chức bởi: </Text>
+        <Text style={styles.organizerName}>
+          {event.organizer?.name ?? "Đang cập nhật"}
+        </Text>
+      </View>
+
+      <TouchableOpacity
+        onPress={() => handleEventPress(event)}
+        style={styles.registerButton}
+      >
+        <Text style={styles.registerButtonText}>Xem chi tiết</Text>
+      </TouchableOpacity>
+    </TouchableOpacity>
+  );
+
+  // Render staff event card
+  const renderStaffEventCard = ({
+    item: event,
+  }: {
+    item: StaffAssignedEvent;
+  }) => (
+    <TouchableOpacity
+      style={styles.staffEventCard}
+      onPress={() => handleEventPress(event)}
+    >
+      <View style={styles.staffEventHeader}>
+        <View style={styles.staffEventTitleContainer}>
+          <Text style={styles.staffEventTitle} numberOfLines={2}>
+            {event.title}
+          </Text>
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: getStatusColor(event.status) },
+            ]}
+          >
+            <Text style={styles.statusText}>{event.status}</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.staffEventInfo}>
+        <View style={styles.infoRow}>
+          <Ionicons name="location-sharp" size={16} color={COLORS.text} />
+          <Text style={styles.infoText} numberOfLines={1}>
+            {event.venue?.name ?? "Đang cập nhật"}
+          </Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Ionicons name="calendar" size={16} color={COLORS.text} />
+          <Text style={styles.infoText}>
+            {formatDate(event.startTime)} - {formatTime(event.startTime)}
+          </Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Ionicons name="people" size={16} color={COLORS.text} />
+          <Text style={styles.infoText}>
+            {event.registeredCount}/{event.maxCapacity} người tham gia
+          </Text>
+        </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.assignmentInfo}>
+          <View style={styles.roleBadge}>
+            <Ionicons
+              name="shield-checkmark"
+              size={14}
+              color={COLORS.primary}
+            />
+            <Text style={styles.roleText}>Check-in Staff</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.cardFooter}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() =>
+            navigation.navigate("StaffScan", {
+              eventId: event.id,
+              eventTitle: event.title,
+            })
+          }
+        >
+          <Ionicons name="create" size={20} color={COLORS.primary} />
+          <Text style={styles.actionButtonText}>Check-in</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() =>
+            navigation.navigate("IncidentReport", {
+              eventId: event.id,
+              eventTitle: event.title,
+            })
+          }
+        >
+          <Ionicons name="warning" size={20} color={COLORS.warning} />
+          <Text style={[styles.actionButtonText, { color: COLORS.warning }]}>
+            Báo cáo
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  );
+
+  // Render header component for FlatList
+  const renderListHeader = () => (
+    <View style={styles.header}>
+      <Text style={styles.title}>
+        {isStaff ? "Sự kiện được phân công" : "Sự kiện"}
+      </Text>
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons
+          name="search"
+          size={20}
+          color={COLORS.text}
+          style={{ opacity: 0.5 }}
+        />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Tìm kiếm sự kiện..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          onSubmitEditing={handleSearchSubmit}
+          returnKeyType="search"
+        />
+      </View>
+
+      {/* Categories */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.categoriesContainer}
+      >
+        {categoryOptions.map((category) => {
+          const isActive = selectedCategory === category;
+          return (
+            <TouchableOpacity
+              key={category}
+              style={[
+                styles.categoryChip,
+                isActive && styles.categoryChipActive,
+              ]}
+              onPress={() => {
+                setSelectedCategory(category);
+                setPage(1);
+              }}
+            >
+              <Text
+                style={[
+                  styles.categoryText,
+                  isActive && styles.categoryTextActive,
+                ]}
+              >
+                {category}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
+      {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+    </View>
+  );
+
+  // Render empty component
+  const renderEmpty = () => {
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>
+            {isStaff ? "Đang tải danh sách sự kiện..." : "Đang tải sự kiện..."}
+          </Text>
+        </View>
+      );
+    }
+    return (
+      <View style={styles.emptyContainer}>
+        <Ionicons
+          name="calendar-outline"
+          size={48}
+          color={COLORS.text}
+          style={{ opacity: 0.25 }}
+        />
+        <Text style={styles.emptyText}>
+          {isStaff
+            ? "Bạn chưa được phân công vào sự kiện nào"
+            : "Không có sự kiện nào"}
+        </Text>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -313,372 +643,47 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
         end={{ x: 0.2, y: 1 }}
         style={styles.gradientBackground}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[COLORS.primary]}
-              tintColor={COLORS.primary}
-            />
-          }
-        >
-          <View style={styles.header}>
-            {isStaff ? (
-              <>
-                <Text style={styles.title}>Sự kiện được phân công</Text>
-
-                {/* Search Bar */}
-                <View style={styles.searchContainer}>
-                  <Ionicons
-                    name="search"
-                    size={20}
-                    color={COLORS.text}
-                    style={{ opacity: 0.5 }}
-                  />
-                  <TextInput
-                    style={styles.searchInput}
-                    placeholder="Tìm kiếm sự kiện..."
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    onSubmitEditing={handleSearchSubmit}
-                    returnKeyType="search"
-                  />
-                </View>
-
-                {/* Categories */}
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.categoriesContainer}
-                >
-                  {categoryOptions.map((category) => {
-                    const isActive = selectedCategory === category;
-                    return (
-                      <TouchableOpacity
-                        key={category}
-                        style={[
-                          styles.categoryChip,
-                          isActive && styles.categoryChipActive,
-                        ]}
-                        onPress={() => {
-                          setSelectedCategory(category);
-                          setPage(1);
-                        }}
-                      >
-                        <Text
-                          style={[
-                            styles.categoryText,
-                            isActive && styles.categoryTextActive,
-                          ]}
-                        >
-                          {category}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
-              </>
-            ) : (
-              <>
-                <Text style={styles.title}>Sự kiện</Text>
-
-                {/* Search Bar */}
-                <View style={styles.searchContainer}>
-                  <Ionicons
-                    name="search"
-                    size={20}
-                    color={COLORS.text}
-                    style={{ opacity: 0.5 }}
-                  />
-                  <TextInput
-                    style={styles.searchInput}
-                    placeholder="Tìm kiếm sự kiện..."
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    onSubmitEditing={handleSearchSubmit}
-                    returnKeyType="search"
-                  />
-                </View>
-
-                {/* Categories */}
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.categoriesContainer}
-                >
-                  {categoryOptions.map((category) => {
-                    const isActive = selectedCategory === category;
-                    return (
-                      <TouchableOpacity
-                        key={category}
-                        style={[
-                          styles.categoryChip,
-                          isActive && styles.categoryChipActive,
-                        ]}
-                        onPress={() => {
-                          setSelectedCategory(category);
-                          setPage(1);
-                        }}
-                      >
-                        <Text
-                          style={[
-                            styles.categoryText,
-                            isActive && styles.categoryTextActive,
-                          ]}
-                        >
-                          {category}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
-              </>
-            )}
-          </View>
-
-          <View style={styles.eventsContainer}>
-            {errorMessage && (
-              <Text style={styles.errorText}>{errorMessage}</Text>
-            )}
-
-            {loading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
-                <Text style={styles.loadingText}>
-                  {isStaff
-                    ? "Đang tải danh sách sự kiện..."
-                    : "Đang tải sự kiện..."}
-                </Text>
-              </View>
-            ) : filteredEvents.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={48}
-                  color={COLORS.text}
-                  style={{ opacity: 0.25 }}
-                />
-                <Text style={styles.emptyText}>
-                  {isStaff
-                    ? "Bạn chưa được phân công vào sự kiện nào"
-                    : "Không có sự kiện nào"}
-                </Text>
-              </View>
-            ) : isStaff ? (
-              // Staff view
-              filteredEvents.map((event) => (
-                <TouchableOpacity
-                  key={event.id}
-                  style={styles.staffEventCard}
-                  onPress={() => handleEventPress(event)}
-                >
-                  <View style={styles.staffEventHeader}>
-                    <View style={styles.staffEventTitleContainer}>
-                      <Text style={styles.staffEventTitle} numberOfLines={2}>
-                        {event.title}
-                      </Text>
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          { backgroundColor: getStatusColor(event.status) },
-                        ]}
-                      >
-                        <Text style={styles.statusText}>{event.status}</Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  <View style={styles.staffEventInfo}>
-                    <View style={styles.infoRow}>
-                      <Ionicons
-                        name="location-sharp"
-                        size={16}
-                        color={COLORS.text}
-                      />
-                      <Text style={styles.infoText} numberOfLines={1}>
-                        {event.venue?.name ?? "Đang cập nhật"}
-                      </Text>
-                    </View>
-
-                    <View style={styles.infoRow}>
-                      <Ionicons name="calendar" size={16} color={COLORS.text} />
-                      <Text style={styles.infoText}>
-                        {formatDate(event.startTime)} -{" "}
-                        {formatTime(event.startTime)}
-                      </Text>
-                    </View>
-
-                    <View style={styles.infoRow}>
-                      <Ionicons name="people" size={16} color={COLORS.text} />
-                      <Text style={styles.infoText}>
-                        {event.registeredCount}/{event.maxCapacity} người tham
-                        gia
-                      </Text>
-                    </View>
-
-                    <View style={styles.divider} />
-
-                    <View style={styles.assignmentInfo}>
-                      <View style={styles.roleBadge}>
-                        <Ionicons
-                          name="shield-checkmark"
-                          size={14}
-                          color={COLORS.primary}
-                        />
-                        <Text style={styles.roleText}>Check-in Staff</Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  <View style={styles.cardFooter}>
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={() =>
-                        navigation.navigate("StaffScan", {
-                          eventId: event.id,
-                          eventTitle: event.title,
-                        })
-                      }
-                    >
-                      <Ionicons
-                        name="create"
-                        size={20}
-                        color={COLORS.primary}
-                      />
-                      <Text style={styles.actionButtonText}>Check-in</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={() =>
-                        navigation.navigate("IncidentReport", {
-                          eventId: event.id,
-                          eventTitle: event.title,
-                        })
-                      }
-                    >
-                      <Ionicons
-                        name="warning"
-                        size={20}
-                        color={COLORS.warning}
-                      />
-                      <Text
-                        style={[
-                          styles.actionButtonText,
-                          { color: COLORS.warning },
-                        ]}
-                      >
-                        Báo cáo
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </TouchableOpacity>
-              ))
-            ) : (
-              // Student view
-              filteredEvents.map((event) => (
-                <TouchableOpacity
-                  key={event.id}
-                  style={styles.eventCard}
-                  activeOpacity={0.7}
-                  onPress={() => handleEventPress(event)}
-                >
-                  <View style={styles.eventHeader}>
-                    <View style={styles.eventIconContainer}>
-                      <Ionicons
-                        name="calendar"
-                        size={24}
-                        color={COLORS.primary}
-                      />
-                    </View>
-                    <View
-                      style={[
-                        styles.categoryBadge,
-                        { backgroundColor: STATUS_COLORS[event.status] },
-                      ]}
-                    >
-                      <Text style={styles.categoryBadgeText}>
-                        {event.status}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <Text style={styles.eventTitle}>{event.title}</Text>
-                  <Text style={styles.eventDescription} numberOfLines={2}>
-                    {event.description}
-                  </Text>
-
-                  <View style={styles.eventDetails}>
-                    <View style={styles.eventDetail}>
-                      <Ionicons
-                        name="calendar-outline"
-                        size={14}
-                        color={COLORS.text}
-                        style={{ opacity: 0.7 }}
-                      />
-                      <Text style={styles.detailText}>
-                        {formatDate(event.startTime)}
-                      </Text>
-                    </View>
-                    <View style={styles.eventDetail}>
-                      <Ionicons
-                        name="time-outline"
-                        size={14}
-                        color={COLORS.text}
-                        style={{ opacity: 0.7 }}
-                      />
-                      <Text style={styles.detailText}>
-                        {formatTime(event.startTime)}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.eventDetails}>
-                    <View style={styles.eventDetail}>
-                      <Ionicons
-                        name="location-outline"
-                        size={14}
-                        color={COLORS.text}
-                        style={{ opacity: 0.7 }}
-                      />
-                      <Text style={styles.detailText}>
-                        {event.venue?.name ?? "Đang cập nhật"}
-                      </Text>
-                    </View>
-                    <View style={styles.eventDetail}>
-                      <Ionicons
-                        name="people-outline"
-                        size={14}
-                        color={COLORS.text}
-                        style={{ opacity: 0.7 }}
-                      />
-                      <Text style={styles.detailText}>
-                        {event.registeredCount}/{event.maxCapacity} người
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.organizerInfo}>
-                    <Text style={styles.organizerLabel}>Tổ chức bởi: </Text>
-                    <Text style={styles.organizerName}>
-                      {event.organizer?.name ?? "Đang cập nhật"}
-                    </Text>
-                  </View>
-
-                  <TouchableOpacity
-                    onPress={() => handleEventPress(event)}
-                    style={styles.registerButton}
-                  >
-                    <Text style={styles.registerButtonText}>Xem chi tiết</Text>
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              ))
-            )}
-          </View>
-        </ScrollView>
+        {isStaff ? (
+          <FlatList
+            data={filteredEvents as StaffAssignedEvent[]}
+            keyExtractor={(item) => item.id}
+            renderItem={renderStaffEventCard}
+            ListHeaderComponent={renderListHeader}
+            ListEmptyComponent={renderEmpty}
+            ListFooterComponent={renderFooter}
+            contentContainerStyle={styles.flatListContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[COLORS.primary]}
+                tintColor={COLORS.primary}
+              />
+            }
+          />
+        ) : (
+          <FlatList
+            data={filteredEvents as Event[]}
+            keyExtractor={(item) => item.id}
+            renderItem={renderStudentEventCard}
+            ListHeaderComponent={renderListHeader}
+            ListEmptyComponent={renderEmpty}
+            ListFooterComponent={renderFooter}
+            contentContainerStyle={styles.flatListContent}
+            showsVerticalScrollIndicator={false}
+            onEndReached={loadMoreEvents}
+            onEndReachedThreshold={0.5}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[COLORS.primary]}
+                tintColor={COLORS.primary}
+              />
+            }
+          />
+        )}
       </LinearGradient>
     </View>
   );
@@ -690,6 +695,22 @@ const styles = StyleSheet.create({
   },
   gradientBackground: {
     flex: 1,
+  },
+  flatListContent: {
+    paddingBottom: 100,
+    paddingHorizontal: SPACING.screenPadding,
+  },
+  footerLoading: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: SPACING.lg,
+    gap: SPACING.sm,
+  },
+  footerLoadingText: {
+    fontSize: FONTS.body,
+    color: COLORS.text,
+    opacity: 0.7,
   },
   header: {
     paddingTop: 60,
@@ -742,17 +763,11 @@ const styles = StyleSheet.create({
   categoryTextActive: {
     color: COLORS.white,
   },
-  scrollContent: {
-    paddingBottom: 100,
-  },
-  eventsContainer: {
-    padding: SPACING.screenPadding,
-    gap: SPACING.lg,
-  },
   eventCard: {
     backgroundColor: COLORS.white,
     borderRadius: RADII.card,
     padding: SPACING.lg,
+    marginBottom: SPACING.md,
     ...SHADOWS.md,
   },
   eventHeader: {
