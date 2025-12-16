@@ -42,7 +42,7 @@ const getSeatColor = (seatType?: string) => {
     case "STAFF":
       return "#2196F3";
     case "RESERVED":
-      return "#A259FF";
+      return "#9CA3AF";
     default:
       return "#5C6AC4";
   }
@@ -136,7 +136,7 @@ const EventRegisterModal: React.FC<EventRegisterModalProps> = ({
     const uniqueTypes = Array.from(
       new Map(
         seats.map((seat) => [
-          seat.seatType || "Ghế",
+          (seat.seatType || "Ghế").toUpperCase(),
           getSeatColor(seat.seatType),
         ])
       ).entries()
@@ -144,7 +144,7 @@ const EventRegisterModal: React.FC<EventRegisterModalProps> = ({
 
     return [
       ...uniqueTypes.map(([label, color]) => ({ label, color })),
-      { label: "Đã đặt", color: "#FF6B6B", booked: true },
+      { label: "Đã đặt", color: "#9CA3AF", booked: true },
       { label: "Không khả dụng", color: "#C4C4C4", dashed: true },
     ];
   }, [seats]);
@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#E0E0E0",
   },
   seatBooked: {
-    backgroundColor: "#FF6B6B",
+    backgroundColor: "#9CA3AF",
     opacity: 0.6,
   },
   seatSelected: {
@@ -565,8 +565,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   seatTextDisabled: {
-    color: COLORS.text,
-    opacity: 0.5,
+    color: "#4B5563",
+    opacity: 0.8,
   },
   legendContainer: {
     flexDirection: "row",
