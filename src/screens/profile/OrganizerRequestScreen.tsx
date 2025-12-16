@@ -37,6 +37,8 @@ const OrganizerRequestScreen: React.FC<Props> = ({ navigation }) => {
   const [description, setDescription] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [campusId, setCampusId] = useState<number | null>(null);
+  const [memberEmails, setMemberEmails] = useState<string[]>([]);
+  const [newMemberEmail, setNewMemberEmail] = useState("");
 
   // Logo image
   const [logoLocalUri, setLogoLocalUri] = useState<string | null>(null);
@@ -193,6 +195,7 @@ const OrganizerRequestScreen: React.FC<Props> = ({ navigation }) => {
         contactEmail: contactEmail.trim(),
         campusId: campusId!,
         proofImageUrl: uploadedProofUrl,
+        memberEmails: memberEmails,
       });
 
       Alert.alert(
@@ -361,6 +364,63 @@ const OrganizerRequestScreen: React.FC<Props> = ({ navigation }) => {
                 "Giấy tờ xác nhận (quyết định thành lập, giấy phép hoạt động...)"
               )}
 
+              {/* Member Emails */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Email thành viên</Text>
+                <Text style={styles.hint}>
+                  Thêm email của các thành viên trong câu lạc bộ (không bắt
+                  buộc)
+                </Text>
+
+                <View style={styles.memberEmailInputRow}>
+                  <TextInput
+                    style={[styles.input, styles.memberEmailInput]}
+                    value={newMemberEmail}
+                    onChangeText={setNewMemberEmail}
+                    placeholder="email@fpt.edu.vn"
+                    placeholderTextColor={COLORS.text + "80"}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                  <TouchableOpacity
+                    style={styles.addMemberButton}
+                    onPress={() => {
+                      const email = newMemberEmail.trim();
+                      if (email && !memberEmails.includes(email)) {
+                        setMemberEmails([...memberEmails, email]);
+                        setNewMemberEmail("");
+                      }
+                    }}
+                  >
+                    <Ionicons name="add" size={24} color={COLORS.white} />
+                  </TouchableOpacity>
+                </View>
+
+                {memberEmails.length > 0 && (
+                  <View style={styles.memberEmailsList}>
+                    {memberEmails.map((email, index) => (
+                      <View key={index} style={styles.memberEmailTag}>
+                        <Text style={styles.memberEmailText}>{email}</Text>
+                        <TouchableOpacity
+                          onPress={() => {
+                            setMemberEmails(
+                              memberEmails.filter((_, i) => i !== index)
+                            );
+                          }}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                          <Ionicons
+                            name="close-circle"
+                            size={18}
+                            color={COLORS.error}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+
               <GradientButton
                 title={loading ? "Đang gửi..." : "Gửi yêu cầu"}
                 onPress={handleSubmit}
@@ -520,6 +580,42 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontSize: FONTS.body,
     fontWeight: "600",
+  },
+  memberEmailInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.sm,
+  },
+  memberEmailInput: {
+    flex: 1,
+  },
+  addMemberButton: {
+    width: 48,
+    height: 48,
+    borderRadius: RADII.md,
+    backgroundColor: COLORS.primary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  memberEmailsList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: SPACING.sm,
+    marginTop: SPACING.md,
+  },
+  memberEmailTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.primary + "15",
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADII.pill,
+    gap: SPACING.xs,
+  },
+  memberEmailText: {
+    fontSize: FONTS.caption,
+    color: COLORS.primary,
+    fontWeight: "500",
   },
   loadingOverlay: {
     position: "absolute",
