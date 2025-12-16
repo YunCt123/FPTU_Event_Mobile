@@ -412,26 +412,28 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
       <View style={styles.eventDetails}>
         <View style={styles.eventDetail}>
           <Ionicons
-            name="location-outline"
+            name={event.isOnline ? "videocam-outline" : "location-outline"}
             size={14}
             color={COLORS.text}
             style={{ opacity: 0.7 }}
           />
           <Text style={styles.detailText}>
-            {event.venue?.name ?? "Đang cập nhật"}
+            {event.isOnline ? "Online" : event.venue?.name ?? "Đang cập nhật"}
           </Text>
         </View>
-        <View style={styles.eventDetail}>
-          <Ionicons
-            name="people-outline"
-            size={14}
-            color={COLORS.text}
-            style={{ opacity: 0.7 }}
-          />
-          <Text style={styles.detailText}>
-            {event.registeredCount}/{event.maxCapacity} người
-          </Text>
-        </View>
+        {event.maxCapacity !== null && (
+          <View style={styles.eventDetail}>
+            <Ionicons
+              name="people-outline"
+              size={14}
+              color={COLORS.text}
+              style={{ opacity: 0.7 }}
+            />
+            <Text style={styles.detailText}>
+              {event.registeredCount}/{event.maxCapacity} người
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.organizerInfo}>
@@ -478,9 +480,15 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
 
       <View style={styles.staffEventInfo}>
         <View style={styles.infoRow}>
-          <Ionicons name="location-sharp" size={16} color={COLORS.text} />
+          <Ionicons
+            name={event.isOnline ? "videocam" : "location-sharp"}
+            size={16}
+            color={COLORS.text}
+          />
           <Text style={styles.infoText} numberOfLines={1}>
-            {event.venue?.name ?? "Đang cập nhật"}
+            {event.isOnline
+              ? "Sự kiện trực tuyến"
+              : event.venue?.name ?? "Đang cập nhật"}
           </Text>
         </View>
 
@@ -491,12 +499,14 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
           </Text>
         </View>
 
-        <View style={styles.infoRow}>
-          <Ionicons name="people" size={16} color={COLORS.text} />
-          <Text style={styles.infoText}>
-            {event.registeredCount}/{event.maxCapacity} người tham gia
-          </Text>
-        </View>
+        {event.maxCapacity !== null && (
+          <View style={styles.infoRow}>
+            <Ionicons name="people" size={16} color={COLORS.text} />
+            <Text style={styles.infoText}>
+              {event.registeredCount}/{event.maxCapacity} người tham gia
+            </Text>
+          </View>
+        )}
 
         <View style={styles.divider} />
 
