@@ -5,6 +5,7 @@ export interface CreateOrganizerRequest {
   contactEmail: string;
   campusId: number;
   proofImageUrl: string;
+  memberEmails: string[];
 }
 
 export interface OrganizerRequestResponse {
@@ -15,6 +16,7 @@ export interface OrganizerRequestResponse {
   contactEmail: string;
   campusId: number;
   proofImageUrl: string;
+  memberEmails?: string[];
   status: string;
   createdAt: string;
   updatedAt: string;
