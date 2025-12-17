@@ -4,10 +4,12 @@ import { feedback, myFeedback } from "../types/feedback";
 
 class FeedbackService {
   async sendFeedback(params: feedback) {
+    console.log(params);
     const response = await api.post<feedback>(
       FEEDBACK_ENDPOINTS.CREATE,
       params
     );
+
     return response;
   }
   async getMyFeedbacks(): Promise<myFeedback[]> {

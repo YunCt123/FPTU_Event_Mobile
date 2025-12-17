@@ -124,6 +124,22 @@ class TicketService {
       throw error;
     }
   }
+
+  /**
+   * Hủy vé
+   * Chỉ cho phép hủy nếu sự kiện bắt đầu sau 1 ngày từ bây giờ
+   * Ghế sẽ được giải phóng và eventRegisteredCount sẽ giảm
+   * Endpoint: POST /tickets/{id}/cancel
+   * Yêu cầu quyền: student
+   */
+  async cancelTicket(ticketId: string): Promise<void> {
+    try {
+      await api.post<void>(TICKET_ENDPOINTS.CANCEL(ticketId));
+    } catch (error) {
+      console.error("Failed to cancel ticket", error);
+      throw error;
+    }
+  }
 }
 
 export const ticketService = new TicketService();
