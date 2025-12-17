@@ -151,6 +151,16 @@ const EventRegisterModal: React.FC<EventRegisterModalProps> = ({
 
   const handleSeatPress = (seat: Seat) => {
     if (!seat.isActive || seat.isBooked) return;
+    // Ngăn người dùng đặt chỗ VIP
+    if (seat.seatType?.toUpperCase() === "VIP") {
+      setAlertConfig({
+        visible: true,
+        type: "error",
+        title: "Không thể chọn",
+        message: "Ghế VIP không có sẵn để đặt",
+      });
+      return;
+    }
     setSelectedSeat((prev) => (prev?.id === seat.id ? null : seat));
   };
 
