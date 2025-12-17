@@ -8,6 +8,7 @@ import {
   Image,
   ActivityIndicator,
   Alert,
+  Linking,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RouteProp } from "@react-navigation/native";
@@ -114,12 +115,16 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
   };
 
   const getCapacityPercentage = () => {
-    if (!event) return 0;
+    if (!event || event.maxCapacity === null) return 0;
     return (event.registeredCount / event.maxCapacity) * 100;
   };
 
   const canRegister = () => {
     if (!event) return false;
+    // Online events don't require registration
+    if (event.isOnline) return false;
+    // Check if registration times are set
+    if (!event.startTimeRegister || !event.endTimeRegister) return false;
     const now = new Date();
     const startRegister = new Date(event.startTimeRegister);
     const endRegister = new Date(event.endTimeRegister);
@@ -127,8 +132,27 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
       event.status === "PUBLISHED" &&
       now >= startRegister &&
       now <= endRegister &&
-      event.registeredCount < event.maxCapacity
+      (event.maxCapacity === null || event.registeredCount < event.maxCapacity)
     );
+  };
+
+  const handleOpenMeetingUrl = async () => {
+    if (event?.onlineMeetingUrl) {
+      try {
+        await Linking.openURL(event.onlineMeetingUrl);
+      } catch (error) {
+        Alert.alert("Lỗi", "Không thể mở đường dẫn");
+      }
+    }
+  };
+
+  const handleCopyMeetingUrl = async () => {
+    if (event?.onlineMeetingUrl) {
+      // Since expo-clipboard is not installed, we'll just show the URL in alert
+      Alert.alert("Đường dẫn cuộc họp", event.onlineMeetingUrl, [
+        { text: "OK" },
+      ]);
+    }
   };
 
   if (loading) {
@@ -160,19 +184,24 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
   }
 
   const isRegisterAvailable = canRegister();
-  const remainingSlots = Math.max(event.maxCapacity - event.registeredCount, 0);
+  const remainingSlots =
+    event.maxCapacity !== null
+      ? Math.max(event.maxCapacity - event.registeredCount, 0)
+      : 0;
   const buttonLabel = isRegisterAvailable
     ? "Đăng ký tham gia"
-    : event.registeredCount >= event.maxCapacity
+    : event.maxCapacity !== null && event.registeredCount >= event.maxCapacity
     ? "Đã hết chỗ"
     : "Chưa mở đăng ký";
   const buttonSubLabel = selectedSeatLabel
     ? `Ghế đã chọn: ${selectedSeatLabel}`
     : isRegisterAvailable
     ? `Còn ${remainingSlots} chỗ trống`
-    : event.registeredCount >= event.maxCapacity
+    : event.maxCapacity !== null && event.registeredCount >= event.maxCapacity
     ? "Hãy theo dõi sự kiện khác"
-    : `Mở đăng ký từ ${formatDate(event.startTimeRegister)}`;
+    : event.startTimeRegister
+    ? `Mở đăng ký từ ${formatDate(event.startTimeRegister)}`
+    : "Chưa có thông tin đăng ký";
   const buttonGradient = isRegisterAvailable
     ? ["#FF9A3C", "#FF6A00"]
     : ["#C8C8C8", "#E0E0E0"];
@@ -230,25 +259,39 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
 
             {/* Event Stats */}
             <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Ionicons name="people" size={20} color={COLORS.primary} />
-                <Text style={styles.statText}>
-                  {event.registeredCount}/{event.maxCapacity}
-                </Text>
-              </View>
-              <View style={styles.statItem}>
-                <View style={styles.progressBarSmall}>
-                  <View
-                    style={[
-                      styles.progressFillSmall,
-                      { width: `${getCapacityPercentage()}%` },
-                    ]}
-                  />
+              {/* Online Badge */}
+              {event.isOnline && (
+                <View style={[styles.statItem, styles.onlineBadge]}>
+                  <Ionicons name="videocam" size={20} color="#FFFFFF" />
+                  <Text style={[styles.statText, { color: "#FFFFFF" }]}>
+                    Online
+                  </Text>
                 </View>
-                <Text style={styles.statText}>
-                  {getCapacityPercentage().toFixed(0)}%
-                </Text>
-              </View>
+              )}
+              {/* Capacity - only show for offline events with maxCapacity */}
+              {!event.isOnline && event.maxCapacity !== null && (
+                <>
+                  <View style={styles.statItem}>
+                    <Ionicons name="people" size={20} color={COLORS.primary} />
+                    <Text style={styles.statText}>
+                      {event.registeredCount}/{event.maxCapacity}
+                    </Text>
+                  </View>
+                  <View style={styles.statItem}>
+                    <View style={styles.progressBarSmall}>
+                      <View
+                        style={[
+                          styles.progressFillSmall,
+                          { width: `${getCapacityPercentage()}%` },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.statText}>
+                      {getCapacityPercentage().toFixed(0)}%
+                    </Text>
+                  </View>
+                </>
+              )}
               {event.isGlobal && (
                 <View style={styles.statItem}>
                   <Ionicons
@@ -280,79 +323,218 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
                 </View>
               </View>
 
+              {/* Registration time - only show if available and not online event */}
+              {!event.isOnline &&
+                event.startTimeRegister &&
+                event.endTimeRegister && (
+                  <>
+                    <View style={styles.divider} />
+
+                    <View style={styles.infoRow}>
+                      <Ionicons
+                        name="calendar-outline"
+                        size={20}
+                        color={COLORS.primary}
+                      />
+                      <View style={styles.infoContent}>
+                        <Text style={styles.infoLabel}>Đăng ký</Text>
+                        <Text style={styles.infoValue}>
+                          {formatDate(event.startTimeRegister)} -{" "}
+                          {formatDate(event.endTimeRegister)}
+                        </Text>
+                      </View>
+                    </View>
+                  </>
+                )}
+
               <View style={styles.divider} />
 
-              <View style={styles.infoRow}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={20}
-                  color={COLORS.primary}
-                />
-                <View style={styles.infoContent}>
-                  <Text style={styles.infoLabel}>Đăng ký</Text>
-                  <Text style={styles.infoValue}>
-                    {formatDate(event.startTimeRegister)} -{" "}
-                    {formatDate(event.endTimeRegister)}
-                  </Text>
+              {/* Location / Online Meeting */}
+              {event.isOnline ? (
+                <View style={styles.infoRow}>
+                  <Ionicons
+                    name="videocam-outline"
+                    size={20}
+                    color={COLORS.primary}
+                  />
+                  <View style={styles.infoContent}>
+                    <Text style={styles.infoLabel}>Sự kiện trực tuyến</Text>
+                    {event.onlineMeetingUrl ? (
+                      <View style={styles.meetingUrlContainer}>
+                        <Text
+                          style={styles.meetingUrlText}
+                          numberOfLines={1}
+                          ellipsizeMode="middle"
+                        >
+                          {event.onlineMeetingUrl}
+                        </Text>
+                        <View style={styles.meetingUrlActions}>
+                          <TouchableOpacity
+                            style={styles.meetingUrlButton}
+                            onPress={handleCopyMeetingUrl}
+                          >
+                            <Ionicons
+                              name="copy-outline"
+                              size={18}
+                              color={COLORS.primary}
+                            />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[
+                              styles.meetingUrlButton,
+                              styles.openLinkButton,
+                            ]}
+                            onPress={handleOpenMeetingUrl}
+                          >
+                            <Ionicons
+                              name="open-outline"
+                              size={18}
+                              color="#FFFFFF"
+                            />
+                            <Text style={styles.openLinkText}>Tham gia</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ) : (
+                      <Text style={styles.infoValue}>
+                        Link tham gia sẽ được cung cấp sau
+                      </Text>
+                    )}
+                  </View>
                 </View>
-              </View>
-
-              <View style={styles.divider} />
-
-              <View style={styles.infoRow}>
-                <Ionicons
-                  name="location-outline"
-                  size={20}
-                  color={COLORS.primary}
-                />
-                <View style={styles.infoContent}>
-                  <Text style={styles.infoLabel}>Địa điểm</Text>
-                  <Text style={styles.infoValue}>{event.venue.name}</Text>
-                  <Text style={styles.infoSubtext}>
-                    {event.venue.location}
-                    {event.venue.hasSeats && " • Có chỗ ngồi"}
-                  </Text>
+              ) : event.venue ? (
+                <View style={styles.infoRow}>
+                  <Ionicons
+                    name="location-outline"
+                    size={20}
+                    color={COLORS.primary}
+                  />
+                  <View style={styles.infoContent}>
+                    <Text style={styles.infoLabel}>Địa điểm</Text>
+                    <Text style={styles.infoValue}>{event.venue.name}</Text>
+                    <Text style={styles.infoSubtext}>
+                      {event.venue.location}
+                      {event.venue.hasSeats && " • Có chỗ ngồi"}
+                    </Text>
+                  </View>
                 </View>
-              </View>
+              ) : (
+                <View style={styles.infoRow}>
+                  <Ionicons
+                    name="location-outline"
+                    size={20}
+                    color={COLORS.primary}
+                  />
+                  <View style={styles.infoContent}>
+                    <Text style={styles.infoLabel}>Địa điểm</Text>
+                    <Text style={styles.infoValue}>Chưa xác định</Text>
+                  </View>
+                </View>
+              )}
             </View>
 
-            {/* Organizer & Host Card */}
+            {/* Organizer Card */}
             <View style={styles.infoCard}>
               <Text style={styles.cardTitle}>Ban tổ chức</Text>
 
-              <View style={styles.infoRow}>
-                <Ionicons
-                  name="business-outline"
-                  size={20}
-                  color={COLORS.primary}
-                />
-                <View style={styles.infoContent}>
+              <View style={styles.organizerRow}>
+                {event.organizer.logoUrl ? (
+                  <Image
+                    source={{ uri: event.organizer.logoUrl }}
+                    style={styles.organizerLogo}
+                  />
+                ) : (
+                  <View style={styles.organizerLogoPlaceholder}>
+                    <Ionicons
+                      name="business"
+                      size={24}
+                      color={COLORS.primary}
+                    />
+                  </View>
+                )}
+                <View style={styles.organizerContent}>
                   <Text style={styles.infoValue}>{event.organizer.name}</Text>
                   <Text style={styles.infoSubtext}>
                     {event.organizer.description}
                   </Text>
                 </View>
               </View>
+            </View>
 
-              <View style={styles.divider} />
-
-              <View style={styles.infoRow}>
-                <Ionicons
-                  name="person-outline"
-                  size={20}
-                  color={COLORS.primary}
-                />
-                <View style={styles.infoContent}>
-                  <Text style={styles.infoLabel}>Người phụ trách</Text>
-                  <Text style={styles.infoValue}>
+            {/* Host/MC Card */}
+            <View style={styles.infoCard}>
+              <Text style={styles.cardTitle}>Người dẫn chương trình</Text>
+              <View style={styles.hostCard}>
+                <View style={styles.hostAvatarContainer}>
+                  <Ionicons name="mic" size={24} color={COLORS.white} />
+                </View>
+                <View style={styles.hostInfo}>
+                  <Text style={styles.hostName}>
                     {event.host.firstName} {event.host.lastName}
                   </Text>
-                  <Text style={styles.infoSubtext}>
-                    @{event.host.userName} • {event.host.email}
-                  </Text>
+                  <Text style={styles.hostRole}>MC / Host</Text>
+                  <Text style={styles.hostContact}>@{event.host.userName}</Text>
                 </View>
               </View>
             </View>
+
+            {/* Speakers Card */}
+            {event.eventSpeakers && event.eventSpeakers.length > 0 && (
+              <View style={styles.infoCard}>
+                <Text style={styles.cardTitle}>
+                  Diễn giả ({event.eventSpeakers.length})
+                </Text>
+                {event.eventSpeakers.map((eventSpeaker, index) => (
+                  <View key={eventSpeaker.id}>
+                    {index > 0 && <View style={styles.divider} />}
+                    <View style={styles.speakerCard}>
+                      {eventSpeaker.speaker.avatar ? (
+                        <Image
+                          source={{ uri: eventSpeaker.speaker.avatar }}
+                          style={styles.speakerAvatar}
+                        />
+                      ) : (
+                        <View style={styles.speakerAvatarPlaceholder}>
+                          <Ionicons
+                            name="person"
+                            size={24}
+                            color={COLORS.primary}
+                          />
+                        </View>
+                      )}
+                      <View style={styles.speakerInfo}>
+                        <Text style={styles.speakerName}>
+                          {eventSpeaker.speaker.name}
+                        </Text>
+                        <View style={styles.speakerBadge}>
+                          <Ionicons
+                            name="briefcase-outline"
+                            size={12}
+                            color={COLORS.primary}
+                          />
+                          <Text style={styles.speakerCompany}>
+                            {eventSpeaker.speaker.company}
+                          </Text>
+                        </View>
+                        <Text style={styles.speakerBio} numberOfLines={2}>
+                          {eventSpeaker.speaker.bio}
+                        </Text>
+                        <View style={styles.topicContainer}>
+                          <Ionicons
+                            name="chatbubble-outline"
+                            size={12}
+                            color={COLORS.text}
+                          />
+                          <Text style={styles.speakerTopic} numberOfLines={1}>
+                            {eventSpeaker.topic}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
 
             {/* Global Badge */}
             {event.isGlobal && (
@@ -368,8 +550,8 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
           </View>
         </ScrollView>
 
-        {/* Register Button - Only show for non-staff users */}
-        {!isStaff && (
+        {/* Register Button - Only show for non-staff users and offline events */}
+        {!isStaff && !event.isOnline && (
           <View style={styles.footer}>
             <TouchableOpacity
               style={[
@@ -419,7 +601,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
         <EventRegisterModal
           visible={isRegisterModalVisible}
           onClose={() => setRegisterModalVisible(false)}
-          venueId={event.venueId}
+          venueId={event.venueId ?? 0}
           eventId={eventId}
           eventTitle={event.title}
           onSeatSelected={(seat) =>
@@ -534,6 +716,9 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontWeight: "600",
   },
+  onlineBadge: {
+    backgroundColor: "#4CAF50",
+  },
   progressBarSmall: {
     width: 60,
     height: 6,
@@ -586,6 +771,36 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     lineHeight: 20,
   },
+  meetingUrlContainer: {
+    marginTop: 4,
+  },
+  meetingUrlText: {
+    fontSize: FONTS.sm,
+    color: COLORS.primary,
+    marginBottom: SPACING.sm,
+  },
+  meetingUrlActions: {
+    flexDirection: "row",
+    gap: SPACING.sm,
+  },
+  meetingUrlButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADII.md,
+    backgroundColor: COLORS.background,
+  },
+  openLinkButton: {
+    backgroundColor: COLORS.primary,
+  },
+  openLinkText: {
+    fontSize: FONTS.sm,
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
   divider: {
     height: 1,
     backgroundColor: COLORS.background,
@@ -606,6 +821,126 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sm,
     color: COLORS.primary,
     fontWeight: "600",
+  },
+  // Organizer styles
+  organizerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+  },
+  organizerLogo: {
+    width: 56,
+    height: 56,
+    borderRadius: RADII.lg,
+  },
+  organizerLogoPlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: RADII.lg,
+    backgroundColor: COLORS.background,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  organizerContent: {
+    flex: 1,
+  },
+  // Host/MC styles
+  hostCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+    backgroundColor: COLORS.background,
+    padding: SPACING.md,
+    borderRadius: RADII.lg,
+  },
+  hostAvatarContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.primary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  hostInfo: {
+    flex: 1,
+  },
+  hostName: {
+    fontSize: FONTS.md,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: 2,
+  },
+  hostRole: {
+    fontSize: FONTS.sm,
+    color: COLORS.primary,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  hostContact: {
+    fontSize: FONTS.xs,
+    color: COLORS.text,
+    opacity: 0.6,
+  },
+  // Speaker styles
+  speakerCard: {
+    flexDirection: "row",
+    gap: SPACING.md,
+    paddingVertical: SPACING.sm,
+  },
+  speakerAvatar: {
+    width: 64,
+    height: 64,
+    borderRadius: RADII.lg,
+  },
+  speakerAvatarPlaceholder: {
+    width: 64,
+    height: 64,
+    borderRadius: RADII.lg,
+    backgroundColor: COLORS.background,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  speakerInfo: {
+    flex: 1,
+  },
+  speakerName: {
+    fontSize: FONTS.md,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  speakerBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 4,
+  },
+  speakerCompany: {
+    fontSize: FONTS.xs,
+    color: COLORS.primary,
+    fontWeight: "600",
+  },
+  speakerBio: {
+    fontSize: FONTS.sm,
+    color: COLORS.text,
+    opacity: 0.7,
+    lineHeight: 18,
+    marginBottom: 6,
+  },
+  topicContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: COLORS.background,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 4,
+    borderRadius: RADII.sm,
+    alignSelf: "flex-start",
+  },
+  speakerTopic: {
+    fontSize: FONTS.xs,
+    color: COLORS.text,
+    opacity: 0.8,
   },
   footer: {
     position: "absolute",

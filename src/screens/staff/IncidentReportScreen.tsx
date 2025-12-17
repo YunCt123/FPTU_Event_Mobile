@@ -178,7 +178,8 @@ export default function IncidentReportScreen({
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const uri = result.assets[0].uri;
         setIncidentImage(uri);
-        uploadToCloudinary(uri);
+        // Await upload to ensure we have the URL before allowing submit
+        await uploadToCloudinary(uri);
       }
     } catch (error) {
       console.error("Image picker error:", error);
@@ -212,6 +213,28 @@ export default function IncidentReportScreen({
       return;
     }
 
+    // Check if image is still uploading
+    if (uploadingImage) {
+      setAlertConfig({
+        visible: true,
+        type: "warning",
+        title: "Thông báo",
+        message: "Đang tải ảnh lên, vui lòng đợi...",
+      });
+      return;
+    }
+
+    // Check if image URL is valid (not a local file URI)
+    if (incidentImage && incidentImage.startsWith("file://")) {
+      setAlertConfig({
+        visible: true,
+        type: "warning",
+        title: "Thông báo",
+        message: "Ảnh chưa được tải lên thành công. Vui lòng thử chọn lại ảnh.",
+      });
+      return;
+    }
+
     setConfirmModalVisible(true);
   };
 
@@ -222,7 +245,12 @@ export default function IncidentReportScreen({
       !CLOUDINARY_CONFIG.UPLOAD_PRESET ||
       CLOUDINARY_CONFIG.UPLOAD_PRESET === "YOUR_UNSIGNED_UPLOAD_PRESET_HERE"
     ) {
-      console.log("Cloudinary not configured, using local URI");
+      console.log("Cloudinary not configured, cannot upload image");
+      Alert.alert(
+        "Lỗi cấu hình",
+        "Chưa cấu hình Cloudinary. Không thể tải ảnh lên."
+      );
+      setIncidentImage(undefined);
       return;
     }
 
@@ -261,10 +289,13 @@ export default function IncidentReportScreen({
       if (data.secure_url) {
         setIncidentImage(data.secure_url);
         console.log("Image uploaded successfully:", data.secure_url);
+      } else {
+        throw new Error("No secure_url in response");
       }
     } catch (error) {
       console.error("Cloudinary upload error:", error);
-      // Không hiện alert lỗi, vẫn giữ local URI
+      Alert.alert("Lỗi tải ảnh", "Không thể tải ảnh lên. Vui lòng thử lại.");
+      setIncidentImage(undefined);
     } finally {
       setUploadingImage(false);
     }
