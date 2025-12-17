@@ -469,14 +469,14 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
                               })
                             }
                           >
+                            <Ionicons
+                              name="qr-code"
+                              size={18}
+                              color={COLORS.white}
+                            />
                             <Text style={styles.viewButtonText}>
                               Xem QR Code
                             </Text>
-                            <Ionicons
-                              name="qr-code"
-                              size={16}
-                              color={COLORS.white}
-                            />
                           </TouchableOpacity>
                           <TouchableOpacity
                             style={styles.cancelButton}
@@ -484,21 +484,13 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
                             disabled={cancellingTicketId === ticket.id}
                           >
                             {cancellingTicketId === ticket.id ? (
-                              <ActivityIndicator
-                                size="small"
-                                color={COLORS.white}
-                              />
+                              <ActivityIndicator size="small" color="#F44336" />
                             ) : (
-                              <>
-                                <Text style={styles.cancelButtonText}>
-                                  Hủy vé
-                                </Text>
-                                <Ionicons
-                                  name="close-circle"
-                                  size={16}
-                                  color={COLORS.white}
-                                />
-                              </>
+                              <Ionicons
+                                name="trash-outline"
+                                size={20}
+                                color="#F44336"
+                              />
                             )}
                           </TouchableOpacity>
                         </View>
@@ -768,38 +760,35 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     letterSpacing: 1,
   },
+  buttonContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.sm,
+  },
   viewButton: {
+    flex: 1,
     backgroundColor: COLORS.primary,
     paddingVertical: SPACING.md,
     borderRadius: RADII.button,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: SPACING.xs,
+    gap: SPACING.sm,
   },
   viewButtonText: {
     color: COLORS.white,
     fontSize: FONTS.body,
     fontWeight: "600",
   },
-  buttonContainer: {
-    flexDirection: "row",
-    gap: SPACING.md,
-  },
   cancelButton: {
-    flex: 1,
-    backgroundColor: "#F44336",
-    paddingVertical: SPACING.md,
-    borderRadius: RADII.button,
-    flexDirection: "row",
+    width: 44,
+    height: 44,
+    borderRadius: RADII.md,
+    borderWidth: 1.5,
+    borderColor: "#F4433630",
+    backgroundColor: "#F4433610",
     alignItems: "center",
     justifyContent: "center",
-    gap: SPACING.xs,
-  },
-  cancelButtonText: {
-    color: COLORS.white,
-    fontSize: FONTS.body,
-    fontWeight: "600",
   },
   modalOverlay: {
     position: "absolute",
