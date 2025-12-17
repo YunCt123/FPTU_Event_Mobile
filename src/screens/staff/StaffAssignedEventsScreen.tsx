@@ -172,12 +172,14 @@ export default function StaffAssignedEventsScreen({
                     <View style={styles.eventInfo}>
                       <View style={styles.infoRow}>
                         <Ionicons
-                          name="location-sharp"
+                          name={event.isOnline ? "videocam" : "location-sharp"}
                           size={16}
                           color={COLORS.text}
                         />
                         <Text style={styles.infoText} numberOfLines={1}>
-                          {event.venue.name}
+                          {event.isOnline
+                            ? "Sự kiện trực tuyến"
+                            : event.venue?.name ?? "Chưa xác định"}
                         </Text>
                       </View>
 
@@ -193,13 +195,19 @@ export default function StaffAssignedEventsScreen({
                         </Text>
                       </View>
 
-                      <View style={styles.infoRow}>
-                        <Ionicons name="people" size={16} color={COLORS.text} />
-                        <Text style={styles.infoText}>
-                          {event.registeredCount}/{event.maxCapacity} người tham
-                          gia
-                        </Text>
-                      </View>
+                      {event.maxCapacity !== null && (
+                        <View style={styles.infoRow}>
+                          <Ionicons
+                            name="people"
+                            size={16}
+                            color={COLORS.text}
+                          />
+                          <Text style={styles.infoText}>
+                            {event.registeredCount}/{event.maxCapacity} người
+                            tham gia
+                          </Text>
+                        </View>
+                      )}
 
                       <View style={styles.divider} />
 

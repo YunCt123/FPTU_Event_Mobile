@@ -73,3 +73,7 @@ export const FEEDBACK_ENDPOINTS = {
   CREATE: "/feedback",
   MY: "feedback/my-feedbacks",
 };
+
+export const ORGANIZER_REQUEST_ENDPOINTS = {
+  CREATE: "/organizer-requests",
+};
