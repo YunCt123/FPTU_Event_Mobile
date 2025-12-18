@@ -66,7 +66,7 @@ class NotificationService {
       this.isInitialized = true;
       console.log("OneSignal initialized successfully");
     } catch (error) {
-      console.error("Failed to initialize OneSignal:", error);
+      console.log("Failed to initialize OneSignal:", error);
     }
   }
 
@@ -99,7 +99,7 @@ class NotificationService {
         OneSignal.User.pushSubscription.getPushSubscriptionId();
       return subscriptionId || null;
     } catch (error) {
-      console.error("Failed to get subscription ID:", error);
+      console.log("Failed to get subscription ID:", error);
       return null;
     }
   }
@@ -149,7 +149,7 @@ class NotificationService {
         }
       });
     } catch (error) {
-      console.error("Failed to setup notification handler:", error);
+      console.log("Failed to setup notification handler:", error);
     }
   }
 
@@ -179,7 +179,7 @@ class NotificationService {
         }
       );
     } catch (error) {
-      console.error("Failed to setup notification received handler:", error);
+      console.log("Failed to setup notification received handler:", error);
     }
   }
 

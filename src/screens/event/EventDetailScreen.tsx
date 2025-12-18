@@ -59,7 +59,6 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
           setUserRole(user.roleName);
         }
       } catch (error) {
-        console.error("Error loading user role:", error);
       }
     };
     loadUserRole();
@@ -77,7 +76,6 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
       console.log("Event detail response:", response);
       setEvent(response);
     } catch (error) {
-      console.error("Failed to fetch event detail", error);
       Alert.alert(
         "Lỗi",
         "Không thể tải thông tin sự kiện. Vui lòng thử lại sau.",

@@ -78,7 +78,7 @@ export default function FeedbackHistoryScreen({
       const eventFeedback = feedbacks.find((f) => f.eventId === eventId);
       setFeedback(eventFeedback || null);
     } catch (error: any) {
-      console.error("Error loading feedback:", error);
+      console.log("Error loading feedback:", error);
       setAlertConfig({
         visible: true,
         type: "error",

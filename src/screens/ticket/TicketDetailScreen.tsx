@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   Image,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -17,7 +16,7 @@ import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { ticketService } from "../../services/ticketService";
 import { Ticket, TicketStatus } from "../../types/ticket";
 import { RootStackParamList } from "../../types/navigation";
-import { GradientButton } from "../../components";
+import { GradientButton, ActionResultModal, ActionResultType } from "../../components";
 
 type TicketDetailScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "TicketDetails">;
@@ -46,6 +45,12 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Modal states
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<ActionResultType>("error");
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+
   useEffect(() => {
     fetchTicketDetail();
   }, [ticketId]);
@@ -59,10 +64,11 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
       console.log("SeatId:", response.seatId);
       setTicket(response);
     } catch (error) {
-      console.error("Failed to fetch ticket detail", error);
-      Alert.alert("Lỗi", "Không thể tải thông tin vé", [
-        { text: "OK", onPress: () => navigation.goBack() },
-      ]);
+      console.log("Failed to fetch ticket detail", error);
+      setModalType("error");
+      setModalTitle("Lỗi");
+      setModalMessage("Không thể tải thông tin vé");
+      setModalVisible(true);
     } finally {
       setLoading(false);
     }
@@ -362,6 +368,20 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
           </View>
         )}
       </LinearGradient>
+      
+      {/* Action Result Modal */}
+      <ActionResultModal
+        visible={modalVisible}
+        type={modalType}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => {
+          setModalVisible(false);
+          if (modalTitle === "Lỗi") {
+            navigation.goBack();
+          }
+        }}
+      />
     </View>
   );
 };

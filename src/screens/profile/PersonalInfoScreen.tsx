@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -19,7 +18,7 @@ import * as ImagePicker from "expo-image-picker";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { authService } from "../../services/authService";
 import { User, UpdateUserProfileRequest } from "../../types/user";
-import { GradientButton } from "../../components";
+import { GradientButton, ActionResultModal, ActionResultType } from "../../components";
 import { CLOUDINARY_CONFIG } from "../../config/cloudinary";
 
 type PersonalInfoScreenProps = {
@@ -33,6 +32,12 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Modal states
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<ActionResultType>("success");
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
   // Form fields
   const [userName, setUserName] = useState("");
@@ -61,8 +66,11 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
       setAddress(data.address);
       setAvatar(data.avatar);
     } catch (error) {
-      console.error("Failed to load user profile", error);
-      Alert.alert("Lỗi", "Không thể tải thông tin người dùng");
+      console.log("Failed to load user profile", error);
+      setModalType("error");
+      setModalTitle("Lỗi");
+      setModalMessage("Không thể tải thông tin người dùng");
+      setModalVisible(true);
     } finally {
       setLoading(false);
     }
@@ -71,10 +79,10 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
-        "Quyền truy cập",
-        "Ứng dụng cần quyền truy cập thư viện ảnh để thay đổi avatar."
-      );
+      setModalType("warning");
+      setModalTitle("Quyền truy cập");
+      setModalMessage("Ứng dụng cần quyền truy cập thư viện ảnh để thay đổi avatar.");
+      setModalVisible(true);
       return;
     }
 
@@ -99,10 +107,10 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
       !CLOUDINARY_CONFIG.UPLOAD_PRESET ||
       CLOUDINARY_CONFIG.UPLOAD_PRESET === "YOUR_UNSIGNED_UPLOAD_PRESET_HERE"
     ) {
-      Alert.alert(
-        "Lỗi cấu hình",
-        "Chưa cấu hình Cloudinary. Hãy cập nhật trong file config/cloudinary.ts."
-      );
+      setModalType("error");
+      setModalTitle("Lỗi cấu hình");
+      setModalMessage("Chưa cấu hình Cloudinary. Hãy cập nhật trong file config/cloudinary.ts.");
+      setModalVisible(true);
       return;
     }
 
@@ -134,11 +142,16 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
       const data = await res.json();
       if (data.secure_url) {
         setAvatar(data.secure_url);
-        Alert.alert("Thành công", "Tải ảnh lên thành công!");
+        setModalType("success");
+        setModalTitle("Thành công");
+        setModalMessage("Tải ảnh lên thành công!");
       }
     } catch (error) {
-      console.error("Cloudinary upload error:", error);
-      Alert.alert("Lỗi", "Không thể tải ảnh lên. Vui lòng thử lại.");
+      console.log("Cloudinary upload error:", error);
+      setModalType("error");
+      setModalTitle("Lỗi");
+      setModalMessage("Không thể tải ảnh lên. Vui lòng thử lại.");
+      setModalVisible(true);
     } finally {
       setUploadingImage(false);
     }
@@ -146,7 +159,10 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
 
   const handleSave = async () => {
     if (!userName || !firstName || !lastName || !phoneNumber || !address) {
-      Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin");
+      setModalType("warning");
+      setModalTitle("Thông tin chưa đầy đủ");
+      setModalMessage("Vui lòng điền đầy đủ thông tin");
+      setModalVisible(true);
       return;
     }
 
@@ -162,18 +178,19 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
       };
 
       await authService.updateProfile(payload);
-      Alert.alert("Thành công", "Cập nhật thông tin thành công!", [
-        {
-          text: "OK",
-          onPress: () => navigation.goBack(),
-        },
-      ]);
+      setModalType("success");
+      setModalTitle("Thành công");
+      setModalMessage("Cập nhật thông tin thành công!");
+      setModalVisible(true);
     } catch (error: any) {
-      console.error("Update profile error:", error);
+      console.log("Update profile error:", error);
       const message =
         error?.response?.data?.message ||
         "Không thể cập nhật thông tin. Vui lòng thử lại.";
-      Alert.alert("Lỗi", message);
+      setModalType("error");
+      setModalTitle("Lỗi");
+      setModalMessage(message);
+      setModalVisible(true);
     } finally {
       setSaving(false);
     }
@@ -362,6 +379,20 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
           </View>
         </KeyboardAvoidingView>
       </LinearGradient>
+      
+      {/* Action Result Modal */}
+      <ActionResultModal
+        visible={modalVisible}
+        type={modalType}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => {
+          setModalVisible(false);
+          if (modalType === "success" && modalTitle === "Thành công") {
+            navigation.goBack();
+          }
+        }}
+      />
     </View>
   );
 };

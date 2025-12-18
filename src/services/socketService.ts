@@ -83,7 +83,7 @@ class SocketService {
           console.log("[Socket] Calling callback...");
           callback(payload);
         } catch (e) {
-          console.error("[Socket] Callback error:", e);
+          console.log("[Socket] Callback error:", e);
         }
       });
     });

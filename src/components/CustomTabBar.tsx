@@ -167,7 +167,6 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
                 </TouchableOpacity>
               );
             } catch (error) {
-              console.error("Error rendering tab:", error);
               return null;
             }
           })

@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
   RefreshControl,
   FlatList,
 } from "react-native";
@@ -21,6 +20,7 @@ import { staffService } from "../../services/staffService";
 import { Event, EventStatus } from "../../types/event";
 import { StaffAssignedEvent } from "../../types/staff";
 import { STORAGE_KEYS } from "../../api/api";
+import { ActionResultModal, ActionResultType } from "../../components";
 
 type EventScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -62,6 +62,12 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const debounceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
+  // Modal states
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<ActionResultType>("error");
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+
   const isStaff = userRole === "staff";
 
   // Load user role on mount
@@ -77,7 +83,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
           console.log("No user found in storage");
         }
       } catch (error) {
-        console.error("Error loading user role:", error);
+        console.log("Error loading user role:", error);
       }
     };
     loadUserRole();
@@ -145,7 +151,6 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
             }
             setHasMore(false); // Staff events don't have pagination
           } catch (staffError: any) {
-            console.error("Error fetching assigned events:", staffError);
             setAssignedEvents([]);
             throw staffError;
           }
@@ -201,24 +206,26 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
           setHasMore(pageNum < meta.totalPages);
         }
       } catch (error: any) {
-        console.error("Failed to fetch events", error);
+        console.log("Failed to fetch events", error);
         setErrorMessage(
           isStaffRole
             ? "Không thể tải danh sách sự kiện được phân công"
             : "Không thể tải danh sách sự kiện"
         );
-        // Only show alert if it's not a silent error
+        // Only show modal if it's not a silent error
         if (
           error?.response?.status !== 401 &&
           error?.response?.status !== 403
         ) {
-          Alert.alert(
-            "Lỗi",
+          setModalType("error");
+          setModalTitle("Lỗi");
+          setModalMessage(
             error.response?.data?.message ||
               (isStaffRole
                 ? "Không thể tải danh sách sự kiện được phân công"
                 : "Không thể tải danh sách sự kiện")
           );
+          setModalVisible(true);
         }
       } finally {
         console.log("Setting loading to false");
@@ -712,6 +719,15 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
           />
         )}
       </LinearGradient>
+      
+      {/* Action Result Modal */}
+      <ActionResultModal
+        visible={modalVisible}
+        type={modalType}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalVisible(false)}
+      />
     </View>
   );
 };

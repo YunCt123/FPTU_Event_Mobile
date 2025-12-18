@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,14 +7,14 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
-  Alert,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { GradientButton } from "../../components";
+import { GradientButton, ActionResultModal, ActionResultType } from "../../components";
 import { authService } from "../../services/authService";
 import { STORAGE_KEYS } from "../../api/api";
 import { User } from "../../types/user";
@@ -54,6 +54,13 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Modal states
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<ActionResultType>("success");
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const loadProfile = async () => {
     try {
@@ -98,37 +105,35 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     loadProfile();
   }, []);
 
+  // Reload profile when screen is focused (e.g., after updating avatar)
+  useFocusEffect(
+    useCallback(() => {
+      loadProfile();
+    }, [])
+  );
+
   const handleLogout = async () => {
-    Alert.alert(
-      "Xác nhận đăng xuất",
-      "Bạn có chắc chắn muốn đăng xuất không?",
-      [
-        {
-          text: "Hủy",
-          style: "cancel",
-        },
-        {
-          text: "Đăng xuất",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await AsyncStorage.multiRemove([
-                STORAGE_KEYS.ACCESS_TOKEN,
-                STORAGE_KEYS.REFRESH_TOKEN,
-                STORAGE_KEYS.USER,
-              ]);
-              navigation.reset({
-                index: 0,
-                routes: [{ name: "Auth" as never }],
-              });
-            } catch (error) {
-              console.error("Logout error:", error);
-              Alert.alert("Lỗi", "Đăng xuất thất bại. Vui lòng thử lại.");
-            }
-          },
-        },
-      ]
-    );
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = async () => {
+    try {
+      await AsyncStorage.multiRemove([
+        STORAGE_KEYS.ACCESS_TOKEN,
+        STORAGE_KEYS.REFRESH_TOKEN,
+        STORAGE_KEYS.USER,
+      ]);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Auth" as never }],
+      });
+    } catch (error) {
+      console.log("Logout error:", error);
+      setModalType("error");
+      setModalTitle("Lỗi");
+      setModalMessage("Đăng xuất thất bại. Vui lòng thử lại.");
+      setModalVisible(true);
+    }
   };
 
   const renderMenuItems = () => {
@@ -231,12 +236,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.profileHeader}>
-              {/* <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => navigation.goBack()}
-              >
-                <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-              </TouchableOpacity> */}
               <View style={styles.avatarContainer}>
                 {user?.avatar ? (
                   <Image
@@ -268,6 +267,33 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           </ScrollView>
         )}
       </LinearGradient>
+      
+      {/* Logout Confirmation Modal - Click outside to cancel */}
+      <ActionResultModal
+        visible={showLogoutConfirm}
+        type="warning"
+        title="Xác nhận đăng xuất"
+        message="Bạn có chắc chắn muốn đăng xuất không?"
+        buttonText="Đăng xuất"
+        onClose={async () => {
+          // Button click will logout
+          setShowLogoutConfirm(false);
+          await confirmLogout();
+        }}
+        onDismiss={() => {
+          // Click outside or back button will just close modal
+          setShowLogoutConfirm(false);
+        }}
+      />
+      
+      {/* Error Modal */}
+      <ActionResultModal
+        visible={modalVisible}
+        type={modalType}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalVisible(false)}
+      />
     </View>
   );
 };

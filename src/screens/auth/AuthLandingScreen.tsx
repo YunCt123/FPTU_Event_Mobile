@@ -110,7 +110,7 @@ const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
         // User cancelled - không cần hiện alert
       }
     } catch (error: any) {
-      console.error("Google login error:", error);
+    
       Alert.alert(
         "Lỗi đăng nhập",
         error?.message || "Không thể đăng nhập bằng Google. Vui lòng thử lại."

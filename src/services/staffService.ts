@@ -21,7 +21,7 @@ export const staffService = {
       );
       return response;
     } catch (error) {
-      console.error("Error fetching assigned events:", error);
+      console.log("Error fetching assigned events:", error);
       throw error;
     }
   },
@@ -42,7 +42,7 @@ export const staffService = {
       );
       return response;
     } catch (error) {
-      console.error("Error validating ticket:", error);
+      console.log("Error validating ticket:", error);
       throw error;
     }
   },
@@ -60,7 +60,7 @@ export const staffService = {
       );
       return response;
     } catch (error) {
-      console.error("Error checking in:", error);
+      console.log("Error checking in:", error);
       throw error;
     }
   },
@@ -81,7 +81,7 @@ export const staffService = {
       );
       return response;
     } catch (error) {
-      console.error("Error performing manual check-in:", error);
+      console.log("Error performing manual check-in:", error);
       throw error;
     }
   },

@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   Dimensions,
   KeyboardAvoidingView,
@@ -27,6 +26,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRealtimeCheckin } from "../../hooks/useRealtimeCheckin";
 import { CheckinPayload } from "../../services/socketService";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { ActionResultModal, ActionResultType } from "../../components";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const SCANNER_SIZE = SCREEN_WIDTH * 0.7;
@@ -58,6 +58,12 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
   const [realtimeCheckins, setRealtimeCheckins] = useState<CheckinPayload[]>(
     []
   );
+
+  // Modal states for ActionResultModal
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<ActionResultType>("error");
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
   const scanLineAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -149,10 +155,10 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
 
   const handleScan = async (qrCode: string) => {
     if (!staffId) {
-      Alert.alert(
-        "Thiếu thông tin",
-        "Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại."
-      );
+      setModalType("warning");
+      setModalTitle("Thiếu thông tin");
+      setModalMessage("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
+      setModalVisible(true);
       return;
     }
 
@@ -180,7 +186,10 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
 
   const handleManualSubmit = () => {
     if (!manualQr.trim()) {
-      Alert.alert("Lỗi", "Vui lòng nhập mã QR code");
+      setModalType("warning");
+      setModalTitle("Lỗi");
+      setModalMessage("Vui lòng nhập mã QR code");
+      setModalVisible(true);
       return;
     }
     setScanned(true);
@@ -190,23 +199,28 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
 
   const handleManualCheckin = async () => {
     if (!studentCode.trim()) {
-      Alert.alert("Lỗi", "Vui lòng nhập mã sinh viên");
+      setModalType("warning");
+      setModalTitle("Lỗi");
+      setModalMessage("Vui lòng nhập mã sinh viên");
+      setModalVisible(true);
       return;
     }
 
     if (!eventId) {
-      Alert.alert(
-        "Lỗi",
+      setModalType("error");
+      setModalTitle("Lỗi");
+      setModalMessage(
         "Không tìm thấy thông tin sự kiện. Vui lòng quay lại và chọn sự kiện."
       );
+      setModalVisible(true);
       return;
     }
 
     if (!staffId) {
-      Alert.alert(
-        "Thiếu thông tin",
-        "Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại."
-      );
+      setModalType("warning");
+      setModalTitle("Thiếu thông tin");
+      setModalMessage("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
+      setModalVisible(true);
       return;
     }
 
@@ -485,10 +499,10 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
                   } else if (manualQr.trim()) {
                     handleManualSubmit();
                   } else {
-                    Alert.alert(
-                      "Lỗi",
-                      "Vui lòng nhập mã sinh viên hoặc mã QR code"
-                    );
+                    setModalType("warning");
+                    setModalTitle("Lỗi");
+                    setModalMessage("Vui lòng nhập mã sinh viên hoặc mã QR code");
+                    setModalVisible(true);
                   }
                 }}
               >
@@ -609,6 +623,15 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
           </Animated.View>
         </View>
       </Modal>
+      
+      {/* Action Result Modal for errors */}
+      <ActionResultModal
+        visible={modalVisible}
+        type={modalType}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalVisible(false)}
+      />
     </View>
   );
 };

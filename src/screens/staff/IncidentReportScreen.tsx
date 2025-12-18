@@ -279,7 +279,7 @@ export default function IncidentReportScreen({
 
       if (!res.ok) {
         const errorText = await res.text();
-        console.error("Upload response error:", errorText);
+        console.log("Upload response error:", errorText);
         throw new Error("Upload failed");
       }
 

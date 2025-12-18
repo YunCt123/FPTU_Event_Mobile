@@ -86,7 +86,7 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
         );
         setFeedbackedEventIds(feedbackedIds);
       } catch (error) {
-        console.error("Failed to fetch tickets", error);
+        console.log("Failed to fetch tickets", error);
         setModalType("error");
         setModalTitle("Lỗi!");
         setModalMessage("Không thể tải danh sách vé. Vui lòng thử lại.");
