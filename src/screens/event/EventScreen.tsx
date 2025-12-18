@@ -537,21 +537,24 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
       </View>
 
       <View style={styles.cardFooter}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() =>
-            navigation.navigate("StaffScan", {
-              eventId: event.id,
-              eventTitle: event.title,
-            })
-          }
-        >
-          <Ionicons name="create" size={20} color={COLORS.primary} />
-          <Text style={styles.actionButtonText}>Check-in</Text>
-        </TouchableOpacity>
+        {/* Hide Check-in button for online events */}
+        {!event.isOnline && (
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() =>
+              navigation.navigate("StaffScan", {
+                eventId: event.id,
+                eventTitle: event.title,
+              })
+            }
+          >
+            <Ionicons name="create" size={20} color={COLORS.primary} />
+            <Text style={styles.actionButtonText}>Check-in</Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
-          style={styles.actionButton}
+          style={[styles.actionButton, event.isOnline && { flex: 1 }]}
           onPress={() =>
             navigation.navigate("IncidentReport", {
               eventId: event.id,
@@ -566,68 +569,6 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
-  );
-
-  // Render header component for FlatList
-  const renderListHeader = () => (
-    <View style={styles.header}>
-      <Text style={styles.title}>
-        {isStaff ? "Sự kiện được phân công" : "Sự kiện"}
-      </Text>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Ionicons
-          name="search"
-          size={20}
-          color={COLORS.text}
-          style={{ opacity: 0.5 }}
-        />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Tìm kiếm sự kiện..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onSubmitEditing={handleSearchSubmit}
-          returnKeyType="search"
-        />
-      </View>
-
-      {/* Categories */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoriesContainer}
-      >
-        {categoryOptions.map((category) => {
-          const isActive = selectedCategory === category;
-          return (
-            <TouchableOpacity
-              key={category}
-              style={[
-                styles.categoryChip,
-                isActive && styles.categoryChipActive,
-              ]}
-              onPress={() => {
-                setSelectedCategory(category);
-                setPage(1);
-              }}
-            >
-              <Text
-                style={[
-                  styles.categoryText,
-                  isActive && styles.categoryTextActive,
-                ]}
-              >
-                {category}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-
-      {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
-    </View>
   );
 
   // Render empty component
@@ -667,16 +608,78 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
         end={{ x: 0.2, y: 1 }}
         style={styles.gradientBackground}
       >
+        {/* Fixed Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>
+            {isStaff ? "Sự kiện được phân công" : "Sự kiện"}
+          </Text>
+
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <Ionicons
+              name="search"
+              size={20}
+              color={COLORS.text}
+              style={{ opacity: 0.5 }}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Tìm kiếm sự kiện..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={handleSearchSubmit}
+              returnKeyType="search"
+              placeholderTextColor={COLORS.text + "80"}
+            />
+          </View>
+
+          {/* Categories */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoriesContainer}
+            keyboardShouldPersistTaps="handled"
+          >
+            {categoryOptions.map((category) => {
+              const isActive = selectedCategory === category;
+              return (
+                <TouchableOpacity
+                  key={category}
+                  style={[
+                    styles.categoryChip,
+                    isActive && styles.categoryChipActive,
+                  ]}
+                  onPress={() => {
+                    setSelectedCategory(category);
+                    setPage(1);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.categoryText,
+                      isActive && styles.categoryTextActive,
+                    ]}
+                  >
+                    {category}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+        </View>
+
         {isStaff ? (
           <FlatList
             data={filteredEvents as StaffAssignedEvent[]}
             keyExtractor={(item) => item.id}
             renderItem={renderStaffEventCard}
-            ListHeaderComponent={renderListHeader}
             ListEmptyComponent={renderEmpty}
             ListFooterComponent={renderFooter}
             contentContainerStyle={styles.flatListContent}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -691,11 +694,11 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
             data={filteredEvents as Event[]}
             keyExtractor={(item) => item.id}
             renderItem={renderStudentEventCard}
-            ListHeaderComponent={renderListHeader}
             ListEmptyComponent={renderEmpty}
             ListFooterComponent={renderFooter}
             contentContainerStyle={styles.flatListContent}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
             onEndReached={loadMoreEvents}
             onEndReachedThreshold={0.5}
             refreshControl={
@@ -723,6 +726,7 @@ const styles = StyleSheet.create({
   flatListContent: {
     paddingBottom: 100,
     paddingHorizontal: SPACING.screenPadding,
+    flexGrow: 1,
   },
   footerLoading: {
     flexDirection: "row",
@@ -738,26 +742,25 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 60,
-    paddingBottom: SPACING.md,
+    paddingBottom: SPACING.sm,
     backgroundColor: "transparent",
+    paddingHorizontal: SPACING.screenPadding,
   },
   title: {
     fontSize: FONTS.header,
     fontWeight: "bold",
     color: COLORS.text,
     marginBottom: SPACING.md,
-    paddingHorizontal: SPACING.lg,
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.background,
     borderRadius: RADII.input,
-    height: 44,
+    height: 48,
     marginBottom: SPACING.md,
     gap: SPACING.sm,
-    marginHorizontal: 20,
-    paddingHorizontal: 10,
+    paddingHorizontal: SPACING.md,
   },
   searchInput: {
     flex: 1,
@@ -765,9 +768,8 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   categoriesContainer: {
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.xs,
     gap: SPACING.sm,
-    paddingHorizontal: 10,
   },
   categoryChip: {
     paddingHorizontal: SPACING.lg,

@@ -53,6 +53,11 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
   const [modalType, setModalType] = useState<ActionResultType>("error");
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
+  const [cancellingTicketId, setCancellingTicketId] = useState<string | null>(
+    null
+  );
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [ticketToCancelId, setTicketToCancelId] = useState<string | null>(null);
 
   const fetchTickets = useCallback(
     async (pageNum: number = 1, isRefresh: boolean = false) => {
@@ -157,6 +162,45 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
 
   const onRefresh = () => {
     fetchTickets(1, true);
+  };
+
+  const handleCancelTicket = async () => {
+    if (!ticketToCancelId) return;
+
+    try {
+      setCancellingTicketId(ticketToCancelId);
+      setShowCancelConfirm(false);
+
+      await ticketService.cancelTicket(ticketToCancelId);
+
+      setModalType("success");
+      setModalTitle("Thành công!");
+      setModalMessage("Vé của bạn đã được hủy. Ghế sẽ được giải phóng.");
+      setModalVisible(true);
+
+      // Refresh tickets list
+      fetchTickets(1, false);
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        (error?.response?.status === 400
+          ? "Không thể hủy vé. Sự kiện bắt đầu trong vòng 24 giờ tới hoặc vé đã bị hủy."
+          : "Không thể hủy vé. Vui lòng thử lại.");
+
+      setModalType("error");
+      setModalTitle("Lỗi hủy vé");
+      setModalMessage(errorMessage);
+      setModalVisible(true);
+    } finally {
+      setCancellingTicketId(null);
+      setTicketToCancelId(null);
+    }
+  };
+
+  const openCancelConfirm = (ticketId: string) => {
+    setTicketToCancelId(ticketId);
+    setShowCancelConfirm(true);
   };
 
   const formatDate = (dateString: string) => {
@@ -314,8 +358,13 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
                   {filteredTickets.map((ticket) => (
                     <TouchableOpacity
                       key={ticket.id}
-                      style={styles.ticketCard}
-                      activeOpacity={0.7}
+                      style={[
+                        styles.ticketCard,
+                        ticket.status === "CANCELLED" &&
+                          styles.ticketCardDisabled,
+                      ]}
+                      activeOpacity={ticket.status === "CANCELLED" ? 1 : 0.7}
+                      disabled={ticket.status === "CANCELLED"}
                       onPress={() => {
                         if (activeTab === "used") {
                           // Chỉ cho phép feedback nếu chưa feedback và vé đã USED
@@ -411,21 +460,40 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
                       </View>
 
                       {ticket.status === "VALID" && (
-                        <TouchableOpacity
-                          style={styles.viewButton}
-                          onPress={() =>
-                            navigation.navigate("TicketQRCode", {
-                              ticketId: ticket.id,
-                            })
-                          }
-                        >
-                          <Text style={styles.viewButtonText}>Xem QR Code</Text>
-                          <Ionicons
-                            name="qr-code"
-                            size={16}
-                            color={COLORS.white}
-                          />
-                        </TouchableOpacity>
+                        <View style={styles.buttonContainer}>
+                          <TouchableOpacity
+                            style={styles.viewButton}
+                            onPress={() =>
+                              navigation.navigate("TicketQRCode", {
+                                ticketId: ticket.id,
+                              })
+                            }
+                          >
+                            <Ionicons
+                              name="qr-code"
+                              size={18}
+                              color={COLORS.white}
+                            />
+                            <Text style={styles.viewButtonText}>
+                              Xem QR Code
+                            </Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.cancelButton}
+                            onPress={() => openCancelConfirm(ticket.id)}
+                            disabled={cancellingTicketId === ticket.id}
+                          >
+                            {cancellingTicketId === ticket.id ? (
+                              <ActivityIndicator size="small" color="#F44336" />
+                            ) : (
+                              <Ionicons
+                                name="trash-outline"
+                                size={20}
+                                color="#F44336"
+                              />
+                            )}
+                          </TouchableOpacity>
+                        </View>
                       )}
 
                       {/* Feedback button or status for used tickets */}
@@ -478,6 +546,37 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
           message={modalMessage}
           onClose={() => setModalVisible(false)}
         />
+
+        {/* Cancel Confirmation Modal */}
+        {showCancelConfirm && (
+          <View style={styles.modalOverlay}>
+            <View style={styles.confirmModal}>
+              <Text style={styles.confirmTitle}>Xác nhận hủy vé</Text>
+              <Text style={styles.confirmMessage}>
+                Bạn chắc chắn muốn hủy vé này? Ghế sẽ được giải phóng và bạn
+                không thể hoàn tác hành động này.
+              </Text>
+              <View style={styles.confirmButtonContainer}>
+                <TouchableOpacity
+                  style={styles.confirmCancelBtn}
+                  onPress={() => {
+                    setShowCancelConfirm(false);
+                    setTicketToCancelId(null);
+                  }}
+                >
+                  <Text style={styles.confirmCancelBtnText}>Hủy</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.confirmDeleteBtn}
+                  onPress={handleCancelTicket}
+                  disabled={cancellingTicketId !== null}
+                >
+                  <Text style={styles.confirmDeleteBtnText}>Xác nhận hủy</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
       </LinearGradient>
     </View>
   );
@@ -589,6 +688,9 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     ...SHADOWS.md,
   },
+  ticketCardDisabled: {
+    opacity: 0.5,
+  },
   ticketHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -658,45 +760,92 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     letterSpacing: 1,
   },
+  buttonContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.sm,
+  },
   viewButton: {
+    flex: 1,
     backgroundColor: COLORS.primary,
     paddingVertical: SPACING.md,
     borderRadius: RADII.button,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: SPACING.xs,
+    gap: SPACING.sm,
   },
   viewButtonText: {
     color: COLORS.white,
     fontSize: FONTS.body,
     fontWeight: "600",
   },
-  feedbackButton: {
-    backgroundColor: "#FF9800",
-    paddingVertical: SPACING.md,
-    borderRadius: RADII.button,
-    flexDirection: "row",
+  cancelButton: {
+    width: 44,
+    height: 44,
+    borderRadius: RADII.md,
+    borderWidth: 1.5,
+    borderColor: "#F4433630",
+    backgroundColor: "#F4433610",
     alignItems: "center",
     justifyContent: "center",
-    gap: SPACING.xs,
   },
-  feedbackButtonText: {
-    color: COLORS.white,
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  confirmModal: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADII.card,
+    padding: SPACING.lg,
+    width: "85%",
+    maxWidth: 350,
+  },
+  confirmTitle: {
+    fontSize: FONTS.xl,
+    fontWeight: "bold",
+    color: COLORS.text,
+    marginBottom: SPACING.md,
+  },
+  confirmMessage: {
+    fontSize: FONTS.body,
+    color: COLORS.text,
+    opacity: 0.7,
+    marginBottom: SPACING.lg,
+    lineHeight: 20,
+  },
+  confirmButtonContainer: {
+    flexDirection: "row",
+    gap: SPACING.md,
+  },
+  confirmCancelBtn: {
+    flex: 1,
+    paddingVertical: SPACING.md,
+    borderRadius: RADII.button,
+    backgroundColor: "#E0E0E0",
+    alignItems: "center",
+  },
+  confirmCancelBtnText: {
+    color: COLORS.text,
     fontSize: FONTS.body,
     fontWeight: "600",
   },
-  feedbackedBadge: {
-    backgroundColor: "#E8F5E9",
+  confirmDeleteBtn: {
+    flex: 1,
     paddingVertical: SPACING.md,
     borderRadius: RADII.button,
-    flexDirection: "row",
+    backgroundColor: "#F44336",
     alignItems: "center",
-    justifyContent: "center",
-    gap: SPACING.xs,
   },
-  feedbackedText: {
-    color: "#4CAF50",
+  confirmDeleteBtnText: {
+    color: COLORS.white,
     fontSize: FONTS.body,
     fontWeight: "600",
   },

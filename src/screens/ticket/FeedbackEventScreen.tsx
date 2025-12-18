@@ -21,7 +21,14 @@ import ActionResultModal from "../../components/ActionResultModal";
 type FeedbackEventScreenProps = {
   navigation: NativeStackNavigationProp<any>;
   route: RouteProp<
-    { params: { eventId: string; eventTitle?: string; ticketId: string } },
+    {
+      params: {
+        eventId: string;
+        eventTitle?: string;
+        ticketId: string;
+        skipTimeValidation?: boolean;
+      };
+    },
     "params"
   >;
 };
@@ -33,6 +40,7 @@ const FeedbackEventScreen: React.FC<FeedbackEventScreenProps> = ({
   route,
 }) => {
   const { eventId, eventTitle, ticketId } = route.params;
+  const skipTimeValidation = route.params.skipTimeValidation ?? true;
   const [rating, setRating] = useState<number>(0);
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
@@ -61,7 +69,7 @@ const FeedbackEventScreen: React.FC<FeedbackEventScreenProps> = ({
         comment: comment.trim(),
         eventId,
         ticketId,
-        skipTimeValidation: true,
+        skipTimeValidation,
       });
 
       setAlertConfig({
@@ -72,9 +80,26 @@ const FeedbackEventScreen: React.FC<FeedbackEventScreenProps> = ({
       });
     } catch (error: any) {
       console.error("Feedback error:", error);
-      const message =
-        error?.response?.data?.message ||
-        "Không thể gửi đánh giá. Vui lòng thử lại.";
+
+      let message = "Không thể gửi đánh giá. Vui lòng thử lại.";
+      let statusCode = error?.response?.status || error?.status;
+
+      // Lấy thông báo từ response data
+      const errorMessage = error?.response?.data?.message || error?.message;
+
+      // Bắt lỗi 400 - sự kiện đã hết thời hạn đánh giá
+      if (statusCode === 400) {
+        message =
+          errorMessage ||
+          "Sự kiện đã hết thời hạn đánh giá. Bạn chỉ có thể đánh giá sự kiện trong 7 ngày sau khi kết thúc.";
+      } else if (statusCode) {
+        // Lỗi HTTP khác
+        message = errorMessage || `Lỗi: ${statusCode}`;
+      } else {
+        // Lỗi network hoặc khác
+        message = errorMessage || message;
+      }
+
       setAlertConfig({
         visible: true,
         type: "error",

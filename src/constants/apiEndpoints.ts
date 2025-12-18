@@ -43,6 +43,7 @@ export const TICKET_ENDPOINTS = {
   BY_QR: (qrCode: string) => `/tickets/qr/${qrCode}`,
   SCAN: "/tickets/scan",
   MANUAL_CHECKIN: "/tickets/manual-checkin",
+  CANCEL: (id: string) => `/tickets/${id}/cancel`,
 };
 
 export const SEAT_ENDPOINTS = {
