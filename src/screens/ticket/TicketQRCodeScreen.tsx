@@ -143,7 +143,7 @@ const TicketQRCodeScreen: React.FC<TicketQRCodeScreenProps> = ({
 
       setTicket(response);
     } catch (error) {
-      console.error("Failed to fetch ticket detail", error);
+      console.log("Failed to fetch ticket detail", error);
       setAlertModalType("error");
       setAlertModalTitle("Lỗi!");
       setAlertModalMessage("Không thể tải thông tin vé. Vui lòng thử lại.");

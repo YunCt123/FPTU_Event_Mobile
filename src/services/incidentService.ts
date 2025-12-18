@@ -16,7 +16,7 @@ export const incidentService = {
       );
       return response;
     } catch (error) {
-      console.error("Error creating incident:", error);
+      console.log("Error creating incident:", error);
       throw error;
     }
   },
@@ -31,7 +31,7 @@ export const incidentService = {
       const response = await api.get<Incident[]>(INCIDENT_ENDPOINTS.MY);
       return response;
     } catch (error) {
-      console.error("Error fetching my incidents:", error);
+      console.log("Error fetching my incidents:", error);
       throw error;
     }
   },
@@ -48,7 +48,7 @@ export const incidentService = {
       );
       return response;
     } catch (error) {
-      console.error("Error fetching incidents by event:", error);
+      console.log("Error fetching incidents by event:", error);
       throw error;
     }
   },
@@ -69,7 +69,7 @@ export const incidentService = {
       );
       return response;
     } catch (error) {
-      console.error("Error updating incident status:", error);
+      console.log("Error updating incident status:", error);
       throw error;
     }
   },

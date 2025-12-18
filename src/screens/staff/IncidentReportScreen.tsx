@@ -182,7 +182,7 @@ export default function IncidentReportScreen({
         await uploadToCloudinary(uri);
       }
     } catch (error) {
-      console.error("Image picker error:", error);
+      console.log("Image picker error:", error);
       Alert.alert(
         "Lỗi",
         `Không thể mở ${
@@ -293,7 +293,7 @@ export default function IncidentReportScreen({
         throw new Error("No secure_url in response");
       }
     } catch (error) {
-      console.error("Cloudinary upload error:", error);
+      console.log("Cloudinary upload error:", error);
       Alert.alert("Lỗi tải ảnh", "Không thể tải ảnh lên. Vui lòng thử lại.");
       setIncidentImage(undefined);
     } finally {
@@ -321,7 +321,7 @@ export default function IncidentReportScreen({
         message: "Báo cáo sự cố đã được gửi đến Ban tổ chức",
       });
     } catch (error: any) {
-      console.error("Create incident error:", error);
+      console.log("Create incident error:", error);
       setAlertConfig({
         visible: true,
         type: "error",

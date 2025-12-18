@@ -82,7 +82,7 @@ class NotificationService {
       console.log("Push notification permission:", granted);
       return granted;
     } catch (error) {
-      console.error("Failed to request notification permission:", error);
+      console.log("Failed to request notification permission:", error);
       return false;
     }
   }
@@ -123,7 +123,7 @@ class NotificationService {
 
       console.log("Subscription registered with backend");
     } catch (error) {
-      console.error("Failed to register subscription:", error);
+      console.log("Failed to register subscription:", error);
     }
   }
 
