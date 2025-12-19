@@ -293,7 +293,7 @@ export default function TicketHistoryScreen({
                             color={COLORS.textSecondary}
                           />
                           <Text style={styles.infoText}>
-                            Đăng ký: {formatDate(ticket.bookingDate)}
+                            Đăng ký: {formatDate(ticket.bookingDate)} - {formatTime(ticket.bookingDate)}
                           </Text>
                         </View>
                       )}
