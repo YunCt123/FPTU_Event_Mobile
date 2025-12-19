@@ -418,7 +418,8 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
                             style={{ opacity: 0.7 }}
                           />
                           <Text style={styles.detailText}>
-                            {formatDate(ticket.bookingDate)}
+                            {formatDate(ticket.bookingDate)} -{" "}
+                            {formatTime(ticket.bookingDate)}
                           </Text>
                         </View>
                         {ticket.checkinTime && (
@@ -845,6 +846,37 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   confirmDeleteBtnText: {
+    color: COLORS.white,
+    fontSize: FONTS.body,
+    fontWeight: "600",
+  },
+  feedbackedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: SPACING.xs,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    backgroundColor: COLORS.background,
+    borderRadius: RADII.md,
+    marginTop: SPACING.sm,
+  },
+  feedbackedText: {
+    fontSize: FONTS.sm,
+    color: COLORS.success,
+    fontWeight: "600",
+  },
+  feedbackButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: SPACING.sm,
+    backgroundColor: COLORS.primary,
+    paddingVertical: SPACING.md,
+    borderRadius: RADII.button,
+    marginTop: SPACING.sm,
+  },
+  feedbackButtonText: {
     color: COLORS.white,
     fontSize: FONTS.body,
     fontWeight: "600",

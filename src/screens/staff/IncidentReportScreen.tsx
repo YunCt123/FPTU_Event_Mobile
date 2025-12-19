@@ -218,8 +218,8 @@ export default function IncidentReportScreen({
       setAlertConfig({
         visible: true,
         type: "warning",
-        title: "Thông báo",
-        message: "Đang tải ảnh lên, vui lòng đợi...",
+        title: "Đang tải ảnh lên",
+        message: "Vui lòng đợi ảnh tải lên hoàn tất trước khi gửi báo cáo.",
       });
       return;
     }
@@ -228,9 +228,10 @@ export default function IncidentReportScreen({
     if (incidentImage && incidentImage.startsWith("file://")) {
       setAlertConfig({
         visible: true,
-        type: "warning",
-        title: "Thông báo",
-        message: "Ảnh chưa được tải lên thành công. Vui lòng thử chọn lại ảnh.",
+        type: "error",
+        title: "Ảnh chưa tải lên xong",
+        message:
+          "Ảnh đang được tải lên hoặc chưa tải lên thành công. Vui lòng đợi hoặc chọn lại ảnh.",
       });
       return;
     }
@@ -292,9 +293,14 @@ export default function IncidentReportScreen({
       } else {
         throw new Error("No secure_url in response");
       }
-    } catch (error) {
-      console.log("Cloudinary upload error:", error);
-      Alert.alert("Lỗi tải ảnh", "Không thể tải ảnh lên. Vui lòng thử lại.");
+    } catch (error: any) {
+      console.error("Cloudinary upload error:", error);
+      const errorMessage =
+        error?.message === "Network request failed"
+          ? "Kết nối mạng không ổn định. Vui lòng kiểm tra kết nối và thử lại."
+          : "Không thể tải ảnh lên. Vui lòng thử lại.";
+      Alert.alert("Lỗi tải ảnh", errorMessage);
+      // Clear image nếu upload thất bại
       setIncidentImage(undefined);
     } finally {
       setUploadingImage(false);
@@ -481,16 +487,31 @@ export default function IncidentReportScreen({
                   source={{ uri: incidentImage }}
                   style={styles.imagePreview}
                 />
-                <TouchableOpacity
-                  style={styles.removeImageButton}
-                  onPress={() => setIncidentImage(undefined)}
-                >
-                  <Ionicons
-                    name="close-circle"
-                    size={28}
-                    color={COLORS.error}
-                  />
-                </TouchableOpacity>
+                {uploadingImage && (
+                  <View style={styles.uploadingOverlay}>
+                    <View style={styles.uploadingContent}>
+                      <ActivityIndicator size="large" color={COLORS.primary} />
+                      <Text style={styles.uploadingText}>
+                        Đang tải ảnh lên...
+                      </Text>
+                      <Text style={styles.uploadingSubtext}>
+                        Vui lòng đợi trong giây lát
+                      </Text>
+                    </View>
+                  </View>
+                )}
+                {!uploadingImage && (
+                  <TouchableOpacity
+                    style={styles.removeImageButton}
+                    onPress={() => setIncidentImage(undefined)}
+                  >
+                    <Ionicons
+                      name="close-circle"
+                      size={28}
+                      color={COLORS.error}
+                    />
+                  </TouchableOpacity>
+                )}
               </View>
             ) : (
               <TouchableOpacity
@@ -499,7 +520,12 @@ export default function IncidentReportScreen({
                 disabled={uploadingImage}
               >
                 {uploadingImage ? (
-                  <ActivityIndicator color={COLORS.primary} />
+                  <>
+                    <ActivityIndicator size="large" color={COLORS.primary} />
+                    <Text style={styles.uploadButtonText}>
+                      Đang tải ảnh lên...
+                    </Text>
+                  </>
                 ) : (
                   <>
                     <Ionicons name="camera" size={32} color={COLORS.primary} />
@@ -510,6 +536,18 @@ export default function IncidentReportScreen({
                   </>
                 )}
               </TouchableOpacity>
+            )}
+            {uploadingImage && (
+              <View style={styles.uploadWarningContainer}>
+                <Ionicons
+                  name="information-circle"
+                  size={16}
+                  color={COLORS.warning}
+                />
+                <Text style={styles.uploadWarningText}>
+                  Đang tải ảnh lên, vui lòng không đóng ứng dụng
+                </Text>
+              </View>
             )}
           </View>
 
@@ -538,13 +576,18 @@ export default function IncidentReportScreen({
             <TouchableOpacity
               style={[
                 styles.submitButton,
-                loading && styles.submitButtonDisabled,
+                (loading || uploadingImage) && styles.submitButtonDisabled,
               ]}
               onPress={handleSubmit}
-              disabled={loading}
+              disabled={loading || uploadingImage}
             >
               {loading ? (
                 <ActivityIndicator color={COLORS.white} />
+              ) : uploadingImage ? (
+                <>
+                  <ActivityIndicator size="small" color={COLORS.white} />
+                  <Text style={styles.submitButtonText}>Đang tải ảnh...</Text>
+                </>
               ) : (
                 <>
                   <Ionicons name="send" size={20} color={COLORS.white} />
@@ -948,5 +991,50 @@ const styles = StyleSheet.create({
     fontSize: FONTS.md,
     fontWeight: "600",
     color: COLORS.error,
+  },
+  uploadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    borderRadius: RADII.md,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  uploadingContent: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: SPACING.lg,
+  },
+  uploadingText: {
+    fontSize: FONTS.md,
+    fontWeight: "600",
+    color: COLORS.white,
+    marginTop: SPACING.md,
+    textAlign: "center",
+  },
+  uploadingSubtext: {
+    fontSize: FONTS.sm,
+    color: COLORS.white,
+    opacity: 0.8,
+    marginTop: SPACING.xs,
+    textAlign: "center",
+  },
+  uploadWarningContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF3E0",
+    marginTop: SPACING.sm,
+    padding: SPACING.sm,
+    borderRadius: RADII.sm,
+    gap: SPACING.xs,
+  },
+  uploadWarningText: {
+    flex: 1,
+    fontSize: FONTS.xs,
+    color: "#E65100",
+    lineHeight: 16,
   },
 });
