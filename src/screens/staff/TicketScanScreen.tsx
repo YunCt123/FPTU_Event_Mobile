@@ -51,8 +51,6 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
   const [result, setResult] = useState<
     ScanTicketResponse | ManualCheckinResponse | null
   >(null);
-  const [modalType, setModalType] = useState<"success" | "error" | null>(null);
-  const [modalMessage, setModalMessage] = useState<string>("");
   const [staffId, setStaffId] = useState<number | null>(null);
   const [showManualInput, setShowManualInput] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
@@ -148,8 +146,6 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
   const resetScan = () => {
     setScanned(false);
     setResult(null);
-    setModalType(null);
-    setModalMessage("");
     setShowResultModal(false);
     setManualQr("");
     setStudentCode("");
@@ -166,15 +162,11 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
 
     // Reset previous result state before a new scan
     setResult(null);
-    setModalType(null);
-    setModalMessage("");
 
     try {
       setLoading(true);
       const response = await ticketService.scanTicket({ qrCode, staffId });
       setResult(response);
-      setModalType(response.success ? "success" : "error");
-      setModalMessage(response.message);
       setShowResultModal(true);
     } catch (error: any) {
       // Ensure we don't keep any stale success result when there is an error
@@ -182,8 +174,9 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
       const message =
         error?.response?.data?.message || "Quét vé thất bại. Vui lòng thử lại.";
       setModalType("error");
+      setModalTitle("Lỗi");
       setModalMessage(message);
-      setShowResultModal(true);
+      setModalVisible(true);
     } finally {
       setLoading(false);
     }
@@ -239,8 +232,6 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
       setLoading(true);
       // Reset previous result/error before a new manual check-in
       setResult(null);
-      setModalType(null);
-      setModalMessage("");
       setScanned(true);
       setShowManualInput(false);
 
@@ -251,8 +242,6 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
       });
 
       setResult(response);
-      setModalType(response.success ? "success" : "error");
-      setModalMessage(response.message);
       setShowResultModal(true);
     } catch (error: any) {
       // Ensure we don't keep any stale success result when there is an error
@@ -261,8 +250,9 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
         error?.response?.data?.message ||
         "Check-in thủ công thất bại. Vui lòng thử lại.";
       setModalType("error");
+      setModalTitle("Lỗi");
       setModalMessage(message);
-      setShowResultModal(true);
+      setModalVisible(true);
     } finally {
       setLoading(false);
     }
@@ -585,7 +575,7 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
 
             {/* Message */}
             <Text style={styles.resultMessage}>
-              {modalMessage || result?.message}
+              {result?.message}
             </Text>
 
             {/* Ticket Details */}
