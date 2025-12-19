@@ -79,7 +79,7 @@ const FeedbackEventScreen: React.FC<FeedbackEventScreenProps> = ({
         message: "Cảm ơn bạn đã gửi đánh giá!",
       });
     } catch (error: any) {
-      console.error("Feedback error:", error);
+      console.log("Feedback error:", error);
 
       let message = "Không thể gửi đánh giá. Vui lòng thử lại.";
       let statusCode = error?.response?.status || error?.status;

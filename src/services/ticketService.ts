@@ -39,7 +39,7 @@ class TicketService {
       );
       return response;
     } catch (error) {
-      console.error("Failed to fetch my tickets", error);
+      console.log("Failed to fetch my tickets", error);
       throw error;
     }
   }
@@ -53,7 +53,7 @@ class TicketService {
       const response = await api.post<Ticket>(TICKET_ENDPOINTS.CREATE, data);
       return response;
     } catch (error) {
-      console.error("Failed to create ticket", error);
+      console.log("Failed to create ticket", error);
       throw error;
     }
   }
@@ -67,7 +67,7 @@ class TicketService {
       const response = await api.get<Ticket>(TICKET_ENDPOINTS.BY_ID(ticketId));
       return response;
     } catch (error) {
-      console.error("Failed to fetch ticket by ID", error);
+      console.log("Failed to fetch ticket by ID", error);
       throw error;
     }
   }
@@ -81,7 +81,7 @@ class TicketService {
       const response = await api.get<Ticket>(TICKET_ENDPOINTS.BY_QR(qrCode));
       return response;
     } catch (error) {
-      console.error("Failed to fetch ticket by QR", error);
+      console.log("Failed to fetch ticket by QR", error);
       throw error;
     }
   }
@@ -99,7 +99,7 @@ class TicketService {
       );
       return response;
     } catch (error) {
-      console.error("Failed to scan ticket", error);
+      console.log("Failed to scan ticket", error);
       throw error;
     }
   }
@@ -120,7 +120,7 @@ class TicketService {
       );
       return response;
     } catch (error) {
-      console.error("Failed to manual check-in ticket", error);
+      console.log("Failed to manual check-in ticket", error);
       throw error;
     }
   }
@@ -136,7 +136,7 @@ class TicketService {
     try {
       await api.post<void>(TICKET_ENDPOINTS.CANCEL(ticketId));
     } catch (error) {
-      console.error("Failed to cancel ticket", error);
+      console.log("Failed to cancel ticket", error);
       throw error;
     }
   }

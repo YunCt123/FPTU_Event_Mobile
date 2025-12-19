@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   Dimensions,
   KeyboardAvoidingView,
@@ -27,6 +26,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRealtimeCheckin } from "../../hooks/useRealtimeCheckin";
 import { CheckinPayload } from "../../services/socketService";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { ActionResultModal, ActionResultType } from "../../components";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const SCANNER_SIZE = SCREEN_WIDTH * 0.7;
@@ -51,14 +51,18 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
   const [result, setResult] = useState<
     ScanTicketResponse | ManualCheckinResponse | null
   >(null);
-  const [modalType, setModalType] = useState<"success" | "error" | null>(null);
-  const [modalMessage, setModalMessage] = useState<string>("");
   const [staffId, setStaffId] = useState<number | null>(null);
   const [showManualInput, setShowManualInput] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
   const [realtimeCheckins, setRealtimeCheckins] = useState<CheckinPayload[]>(
     []
   );
+
+  // Modal states for ActionResultModal
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<ActionResultType>("error");
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
   const scanLineAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -142,8 +146,6 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
   const resetScan = () => {
     setScanned(false);
     setResult(null);
-    setModalType(null);
-    setModalMessage("");
     setShowResultModal(false);
     setManualQr("");
     setStudentCode("");
@@ -151,24 +153,20 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
 
   const handleScan = async (qrCode: string) => {
     if (!staffId) {
-      Alert.alert(
-        "Thiếu thông tin",
-        "Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại."
-      );
+      setModalType("warning");
+      setModalTitle("Thiếu thông tin");
+      setModalMessage("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
+      setModalVisible(true);
       return;
     }
 
     // Reset previous result state before a new scan
     setResult(null);
-    setModalType(null);
-    setModalMessage("");
 
     try {
       setLoading(true);
       const response = await ticketService.scanTicket({ qrCode, staffId });
       setResult(response);
-      setModalType(response.success ? "success" : "error");
-      setModalMessage(response.message);
       setShowResultModal(true);
     } catch (error: any) {
       // Ensure we don't keep any stale success result when there is an error
@@ -176,8 +174,9 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
       const message =
         error?.response?.data?.message || "Quét vé thất bại. Vui lòng thử lại.";
       setModalType("error");
+      setModalTitle("Lỗi");
       setModalMessage(message);
-      setShowResultModal(true);
+      setModalVisible(true);
     } finally {
       setLoading(false);
     }
@@ -191,7 +190,10 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
 
   const handleManualSubmit = () => {
     if (!manualQr.trim()) {
-      Alert.alert("Lỗi", "Vui lòng nhập mã QR code");
+      setModalType("warning");
+      setModalTitle("Lỗi");
+      setModalMessage("Vui lòng nhập mã QR code");
+      setModalVisible(true);
       return;
     }
     setScanned(true);
@@ -201,23 +203,28 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
 
   const handleManualCheckin = async () => {
     if (!studentCode.trim()) {
-      Alert.alert("Lỗi", "Vui lòng nhập mã sinh viên");
+      setModalType("warning");
+      setModalTitle("Lỗi");
+      setModalMessage("Vui lòng nhập mã sinh viên");
+      setModalVisible(true);
       return;
     }
 
     if (!eventId) {
-      Alert.alert(
-        "Lỗi",
+      setModalType("error");
+      setModalTitle("Lỗi");
+      setModalMessage(
         "Không tìm thấy thông tin sự kiện. Vui lòng quay lại và chọn sự kiện."
       );
+      setModalVisible(true);
       return;
     }
 
     if (!staffId) {
-      Alert.alert(
-        "Thiếu thông tin",
-        "Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại."
-      );
+      setModalType("warning");
+      setModalTitle("Thiếu thông tin");
+      setModalMessage("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
+      setModalVisible(true);
       return;
     }
 
@@ -225,8 +232,6 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
       setLoading(true);
       // Reset previous result/error before a new manual check-in
       setResult(null);
-      setModalType(null);
-      setModalMessage("");
       setScanned(true);
       setShowManualInput(false);
 
@@ -237,8 +242,6 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
       });
 
       setResult(response);
-      setModalType(response.success ? "success" : "error");
-      setModalMessage(response.message);
       setShowResultModal(true);
     } catch (error: any) {
       // Ensure we don't keep any stale success result when there is an error
@@ -247,8 +250,9 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
         error?.response?.data?.message ||
         "Check-in thủ công thất bại. Vui lòng thử lại.";
       setModalType("error");
+      setModalTitle("Lỗi");
       setModalMessage(message);
-      setShowResultModal(true);
+      setModalVisible(true);
     } finally {
       setLoading(false);
     }
@@ -507,10 +511,10 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
                   } else if (manualQr.trim()) {
                     handleManualSubmit();
                   } else {
-                    Alert.alert(
-                      "Lỗi",
-                      "Vui lòng nhập mã sinh viên hoặc mã QR code"
-                    );
+                    setModalType("warning");
+                    setModalTitle("Lỗi");
+                    setModalMessage("Vui lòng nhập mã sinh viên hoặc mã QR code");
+                    setModalVisible(true);
                   }
                 }}
               >
@@ -571,7 +575,7 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
 
             {/* Message */}
             <Text style={styles.resultMessage}>
-              {modalMessage || result?.message}
+              {result?.message}
             </Text>
 
             {/* Ticket Details */}
@@ -631,6 +635,15 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
           </Animated.View>
         </View>
       </Modal>
+      
+      {/* Action Result Modal for errors */}
+      <ActionResultModal
+        visible={modalVisible}
+        type={modalType}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalVisible(false)}
+      />
     </View>
   );
 };

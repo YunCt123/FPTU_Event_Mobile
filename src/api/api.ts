@@ -3,6 +3,7 @@ import axios, {
   AxiosRequestConfig,
   AxiosResponse,
   InternalAxiosRequestConfig,
+  AxiosHeaders,
 } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -30,7 +31,7 @@ apiClient.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
     if (token) {
-      config.headers = config.headers ?? {};
+      config.headers = config.headers || new AxiosHeaders();
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -74,7 +75,7 @@ apiClient.interceptors.response.use(
             );
           }
 
-          originalRequest.headers = originalRequest.headers ?? {};
+          originalRequest.headers = originalRequest.headers || new AxiosHeaders();
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
 
           return apiClient(originalRequest);

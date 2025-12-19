@@ -116,7 +116,7 @@ const TicketQRCodeScreen: React.FC<TicketQRCodeScreenProps> = ({
       // TODO: Implement brightness control if needed
       // Có thể dùng expo-brightness hoặc react-native-brightness
     } catch (error) {
-      console.error("Failed to increase brightness", error);
+      console.log("Failed to increase brightness", error);
     }
   };
 
@@ -124,7 +124,7 @@ const TicketQRCodeScreen: React.FC<TicketQRCodeScreenProps> = ({
     try {
       // TODO: Restore original brightness
     } catch (error) {
-      console.error("Failed to restore brightness", error);
+      console.log("Failed to restore brightness", error);
     }
   };
 
@@ -143,7 +143,7 @@ const TicketQRCodeScreen: React.FC<TicketQRCodeScreenProps> = ({
 
       setTicket(response);
     } catch (error) {
-      console.error("Failed to fetch ticket detail", error);
+      console.log("Failed to fetch ticket detail", error);
       setAlertModalType("error");
       setAlertModalTitle("Lỗi!");
       setAlertModalMessage("Không thể tải thông tin vé. Vui lòng thử lại.");

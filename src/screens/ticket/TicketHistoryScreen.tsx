@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-  Alert,
   Image,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -18,6 +17,7 @@ import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { ticketService } from "../../services/ticketService";
 import { Ticket, TicketStatus } from "../../types/ticket";
 import { feedbackService } from "../../services/feedbackService";
+import { ActionResultModal, ActionResultType } from "../../components";
 
 type TicketHistoryScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -32,6 +32,12 @@ export default function TicketHistoryScreen({
   const [feedbackedEventIds, setFeedbackedEventIds] = useState<Set<string>>(
     new Set()
   );
+
+  // Modal states
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<ActionResultType>("error");
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
   const loadTickets = async (isRefresh: boolean = false) => {
     try {
@@ -54,11 +60,13 @@ export default function TicketHistoryScreen({
       );
       setFeedbackedEventIds(feedbackedIds);
     } catch (error: any) {
-      console.error("Error loading tickets:", error);
-      Alert.alert(
-        "Lỗi",
+      console.log("Error loading tickets:", error);
+      setModalType("error");
+      setModalTitle("Lỗi");
+      setModalMessage(
         error.response?.data?.message || "Không thể tải lịch sử đăng ký"
       );
+      setModalVisible(true);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -335,6 +343,15 @@ export default function TicketHistoryScreen({
           )}
         </ScrollView>
       </LinearGradient>
+      
+      {/* Action Result Modal */}
+      <ActionResultModal
+        visible={modalVisible}
+        type={modalType}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalVisible(false)}
+      />
     </View>
   );
 }

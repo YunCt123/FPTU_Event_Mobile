@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
   RefreshControl,
   FlatList,
 } from "react-native";
@@ -21,6 +20,7 @@ import { staffService } from "../../services/staffService";
 import { Event, EventStatus } from "../../types/event";
 import { StaffAssignedEvent } from "../../types/staff";
 import { STORAGE_KEYS } from "../../api/api";
+import { ActionResultModal, ActionResultType } from "../../components";
 
 type EventScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -54,11 +54,19 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
     []
   );
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const debounceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  // Modal states
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<ActionResultType>("error");
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
   const isStaff = userRole === "staff";
 
@@ -75,7 +83,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
           console.log("No user found in storage");
         }
       } catch (error) {
-        console.error("Error loading user role:", error);
+        console.log("Error loading user role:", error);
       }
     };
     loadUserRole();
@@ -143,7 +151,6 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
             }
             setHasMore(false); // Staff events don't have pagination
           } catch (staffError: any) {
-            console.error("Error fetching assigned events:", staffError);
             setAssignedEvents([]);
             throw staffError;
           }
@@ -199,28 +206,31 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
           setHasMore(pageNum < meta.totalPages);
         }
       } catch (error: any) {
-        console.error("Failed to fetch events", error);
+        console.log("Failed to fetch events", error);
         setErrorMessage(
           isStaffRole
             ? "Không thể tải danh sách sự kiện được phân công"
             : "Không thể tải danh sách sự kiện"
         );
-        // Only show alert if it's not a silent error
+        // Only show modal if it's not a silent error
         if (
           error?.response?.status !== 401 &&
           error?.response?.status !== 403
         ) {
-          Alert.alert(
-            "Lỗi",
+          setModalType("error");
+          setModalTitle("Lỗi");
+          setModalMessage(
             error.response?.data?.message ||
               (isStaffRole
                 ? "Không thể tải danh sách sự kiện được phân công"
                 : "Không thể tải danh sách sự kiện")
           );
+          setModalVisible(true);
         }
       } finally {
         console.log("Setting loading to false");
         setLoading(false);
+        setInitialLoad(false);
         setRefreshing(false);
         setLoadingMore(false);
       }
@@ -242,9 +252,33 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userRole]); // Only depend on userRole to avoid infinite loop
 
+  // Debounce search query with 2 second delay
+  useEffect(() => {
+    // Clear previous timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Don't trigger on initial load
+    if (!initialLoad && userRole !== null) {
+      // Set new timer
+      debounceTimerRef.current = setTimeout(() => {
+        console.log("Debounced search triggered:", searchQuery);
+        setAppliedSearch(searchQuery);
+      }, 2000);
+    }
+
+    // Cleanup
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchQuery, userRole, initialLoad]);
+
   // Fetch events when search changes (but only after initial load)
   useEffect(() => {
-    if (userRole !== null && appliedSearch !== "") {
+    if (userRole !== null && appliedSearch !== "" && !initialLoad) {
       console.log(
         "Search changed, fetching events with search:",
         appliedSearch
@@ -285,19 +319,6 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
 
   const filteredEvents = useMemo(() => {
     const sourceEvents = isStaff ? assignedEvents : events;
-    console.log(
-      "Filtering events - sourceEvents count:",
-      sourceEvents.length,
-      "isStaff:",
-      isStaff
-    );
-    console.log(
-      "Filter params - category:",
-      selectedCategory,
-      "searchQuery:",
-      searchQuery
-    );
-
     const filtered = sourceEvents.filter((event) => {
       const matchCategory =
         selectedCategory === "Tất cả" || event.category === selectedCategory;
@@ -698,6 +719,15 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
           />
         )}
       </LinearGradient>
+      
+      {/* Action Result Modal */}
+      <ActionResultModal
+        visible={modalVisible}
+        type={modalType}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalVisible(false)}
+      />
     </View>
   );
 };

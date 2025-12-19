@@ -30,7 +30,7 @@ class EventService {
       });
       return data;
     } catch (error) {
-      console.error("Error fetching events:", error);
+      console.log("Error fetching events:", error);
       throw error;
     }
   }
@@ -44,7 +44,7 @@ class EventService {
       const data = await api.get<Event>(`${EVENT_ENDPOINTS.LIST}/${eventId}`);
       return data;
     } catch (error) {
-      console.error("Error fetching event by ID:", error);
+      console.log("Error fetching event by ID:", error);
       throw error;
     }
   }
@@ -61,7 +61,7 @@ class EventService {
       );
       return res;
     } catch (error) {
-      console.error("Error registering event:", error);
+      console.log("Error registering event:", error);
       throw error;
     }
   }

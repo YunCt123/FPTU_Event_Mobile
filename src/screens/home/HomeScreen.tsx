@@ -49,7 +49,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             setUserAvatar(user.avatar || null);
           }
         } catch (error) {
-          console.error("Error loading user:", error);
+          console.log("Error loading user:", error);
         }
       };
 
@@ -84,7 +84,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         );
         setEvents(publishedEvents);
       } catch (error) {
-        console.error("Error loading events:", error);
+        console.log("Error loading events:", error);
       } finally {
         setLoading(false);
       }

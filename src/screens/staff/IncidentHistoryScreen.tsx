@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,6 +18,7 @@ import {
   IncidentSeverity,
   IncidentStatus,
 } from "../../types/incident";
+import { ActionResultModal, ActionResultType } from "../../components";
 
 type IncidentHistoryScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -31,16 +31,24 @@ export default function IncidentHistoryScreen({
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Modal states
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<ActionResultType>("error");
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+
   const loadIncidents = async () => {
     try {
       const data = await incidentService.getMyIncidents();
       setIncidents(data);
     } catch (error: any) {
-      console.error("Error loading incidents:", error);
-      Alert.alert(
-        "Lỗi",
+      console.log("Error loading incidents:", error);
+      setModalType("error");
+      setModalTitle("Lỗi");
+      setModalMessage(
         error.response?.data?.message || "Không thể tải lịch sử báo cáo sự cố"
       );
+      setModalVisible(true);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -248,6 +256,15 @@ export default function IncidentHistoryScreen({
           )}
         </ScrollView>
       </LinearGradient>
+      
+      {/* Action Result Modal */}
+      <ActionResultModal
+        visible={modalVisible}
+        type={modalType}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalVisible(false)}
+      />
     </View>
   );
 }

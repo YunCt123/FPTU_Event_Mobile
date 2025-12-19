@@ -5,6 +5,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Animated,
   Easing,
 } from "react-native";
@@ -21,6 +22,7 @@ export interface ActionResultModalProps {
   message?: string;
   subtitle?: string;
   onClose: () => void;
+  onDismiss?: () => void; // Called when user clicks outside modal or presses back
   buttonText?: string;
   showConfetti?: boolean;
 }
@@ -32,6 +34,7 @@ const ActionResultModal: React.FC<ActionResultModalProps> = ({
   message,
   subtitle,
   onClose,
+  onDismiss,
   buttonText = "Đóng",
   showConfetti = true,
 }) => {
@@ -193,9 +196,10 @@ const ActionResultModal: React.FC<ActionResultModalProps> = ({
       visible={visible}
       transparent
       animationType="none"
-      onRequestClose={onClose}
+      onRequestClose={onDismiss || onClose}
     >
-      <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
+      <TouchableWithoutFeedback onPress={onDismiss}>
+        <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
         {/* Confetti particles (only for success) */}
         {type === "success" &&
           showConfetti &&
@@ -237,57 +241,61 @@ const ActionResultModal: React.FC<ActionResultModalProps> = ({
             );
           })}
 
-        <Animated.View
-          style={[styles.modalContent, { transform: [{ scale: scaleAnim }] }]}
-        >
-          {/* Icon */}
-          <View style={styles.iconWrapper}>
-            <LinearGradient
-              colors={config.gradientColors}
-              style={styles.iconContainer}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Animated.View style={{ transform: [{ scale: checkmarkAnim }] }}>
-                <Ionicons
-                  name={config.icon}
-                  size={56}
-                  color={config.iconColor}
-                />
-              </Animated.View>
-            </LinearGradient>
-          </View>
-
-          {/* Title & Messages */}
+        {/* Stop propagation to modal content */}
+        <TouchableWithoutFeedback>
           <Animated.View
-            style={{
-              transform: [{ translateY: slideAnim }],
-              opacity: fadeAnim,
-              alignItems: "center",
-            }}
+            style={[styles.modalContent, { transform: [{ scale: scaleAnim }] }]}
           >
-            <Text style={styles.title}>{title}</Text>
-            {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
-            {message && <Text style={styles.message}>{message}</Text>}
-          </Animated.View>
+            {/* Icon */}
+            <View style={styles.iconWrapper}>
+              <LinearGradient
+                colors={config.gradientColors}
+                style={styles.iconContainer}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Animated.View style={{ transform: [{ scale: checkmarkAnim }] }}>
+                  <Ionicons
+                    name={config.icon}
+                    size={56}
+                    color={config.iconColor}
+                  />
+                </Animated.View>
+              </LinearGradient>
+            </View>
 
-          {/* Button */}
-          <TouchableOpacity
-            style={styles.button}
-            onPress={onClose}
-            activeOpacity={0.9}
-          >
-            <LinearGradient
-              colors={COLORS.gradient_button}
-              style={styles.buttonGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+            {/* Title & Messages */}
+            <Animated.View
+              style={{
+                transform: [{ translateY: slideAnim }],
+                opacity: fadeAnim,
+                alignItems: "center",
+              }}
             >
-              <Text style={styles.buttonText}>{buttonText}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
+              <Text style={styles.title}>{title}</Text>
+              {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+              {message && <Text style={styles.message}>{message}</Text>}
+            </Animated.View>
+
+            {/* Button */}
+            <TouchableOpacity
+              style={styles.button}
+              onPress={onClose}
+              activeOpacity={0.9}
+            >
+              <LinearGradient
+                colors={COLORS.gradient_button}
+                style={styles.buttonGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <Text style={styles.buttonText}>{buttonText}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+        </TouchableWithoutFeedback>
       </Animated.View>
+    </TouchableWithoutFeedback>
     </Modal>
   );
 };

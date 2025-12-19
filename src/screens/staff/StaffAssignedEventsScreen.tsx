@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
@@ -15,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { staffService } from "../../services/staffService";
 import { StaffAssignedEvent } from "../../types/staff";
+import { ActionResultModal, ActionResultType } from "../../components";
 
 type StaffAssignedEventsScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -26,6 +26,12 @@ export default function StaffAssignedEventsScreen({
   const [events, setEvents] = useState<StaffAssignedEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Modal states
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<ActionResultType>("error");
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
   const loadAssignedEvents = async () => {
     try {
@@ -47,13 +53,15 @@ export default function StaffAssignedEventsScreen({
         setEvents([]);
       }
     } catch (error: any) {
-      console.error("Error loading assigned events:", error);
-      console.error("Error details:", error.response?.data);
-      Alert.alert(
-        "Lỗi",
+      console.log("Error loading assigned events:", error);
+      console.log("Error details:", error.response?.data);
+      setModalType("error");
+      setModalTitle("Lỗi");
+      setModalMessage(
         error.response?.data?.message ||
           "Không thể tải danh sách sự kiện được phân công"
       );
+      setModalVisible(true);
       setEvents([]);
     } finally {
       setLoading(false);
@@ -271,6 +279,15 @@ export default function StaffAssignedEventsScreen({
           )}
         </ScrollView>
       </LinearGradient>
+      
+      {/* Action Result Modal */}
+      <ActionResultModal
+        visible={modalVisible}
+        type={modalType}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalVisible(false)}
+      />
     </View>
   );
 }
