@@ -149,6 +149,7 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
     setShowResultModal(false);
     setManualQr("");
     setStudentCode("");
+    setModalType("error"); // Reset modal type
   };
 
   const handleScan = async (qrCode: string) => {
@@ -168,6 +169,12 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
       const response = await ticketService.scanTicket({ qrCode, staffId });
       setResult(response);
       setShowResultModal(true);
+      // Set modal type to success if check-in was successful
+      if (response.success && response.ticket?.status === "USED") {
+        setModalType("success");
+      } else {
+        setModalType("error");
+      }
     } catch (error: any) {
       // Ensure we don't keep any stale success result when there is an error
       setResult(null);
@@ -243,6 +250,12 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
 
       setResult(response);
       setShowResultModal(true);
+      // Set modal type to success if check-in was successful
+      if (response.success && response.ticket?.status === "USED") {
+        setModalType("success");
+      } else {
+        setModalType("error");
+      }
     } catch (error: any) {
       // Ensure we don't keep any stale success result when there is an error
       setResult(null);
@@ -263,8 +276,10 @@ const TicketScanScreen = ({ navigation, route }: TicketScanScreenProps) => {
     outputRange: [0, SCANNER_SIZE - 4],
   });
 
-  // Derived state for modal display
-  const isSuccessResult = modalType === "success";
+  // Derived state for modal display - check if result exists and check-in was successful
+  const isSuccessResult = result !== null && 
+    ((result as ScanTicketResponse | ManualCheckinResponse)?.success === true ||
+     (result as ScanTicketResponse | ManualCheckinResponse)?.ticket?.status === "USED");
 
   // Loading state
   if (hasPermission === null) {
