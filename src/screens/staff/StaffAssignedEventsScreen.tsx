@@ -95,6 +95,13 @@ export default function StaffAssignedEventsScreen({
     }
   };
 
+  const isEventOngoing = (startTime: string, endTime: string) => {
+    const now = new Date();
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    return now >= start && now <= end;
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("vi-VN", {
@@ -232,53 +239,60 @@ export default function StaffAssignedEventsScreen({
                     </View>
 
                     <View style={styles.cardFooter}>
-                      {/* Hide Check-in and Báo cáo buttons for CANCELED events */}
-                      {event.status !== "CANCELED" && (
-                        <>
-                          <TouchableOpacity
-                            style={styles.actionButton}
-                            onPress={() =>
-                              navigation.navigate("StaffScan", {
-                                eventId: event.id,
-                                eventTitle: event.title,
-                              })
-                            }
-                          >
-                            <Ionicons
-                              name="create"
-                              size={20}
-                              color={COLORS.primary}
-                            />
-                            <Text style={styles.actionButtonText}>
-                              Check-in
-                            </Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            style={styles.actionButton}
-                            onPress={() =>
-                              navigation.navigate("IncidentReport", {
-                                eventId: event.id,
-                                eventTitle: event.title,
-                              })
-                            }
-                          >
-                            <Ionicons
-                              name="warning"
-                              size={20}
-                              color={COLORS.warning}
-                            />
-                            <Text
-                              style={[
-                                styles.actionButtonText,
-                                { color: COLORS.warning },
-                              ]}
+                      {/* Hide Check-in and Báo cáo buttons for CANCELED and PENDING events */}
+                      {event.status !== "CANCELED" &&
+                        event.status !== "PENDING" && (
+                          <>
+                            <TouchableOpacity
+                              style={styles.actionButton}
+                              onPress={() =>
+                                navigation.navigate("StaffScan", {
+                                  eventId: event.id,
+                                  eventTitle: event.title,
+                                })
+                              }
                             >
-                              Báo cáo
-                            </Text>
-                          </TouchableOpacity>
-                        </>
-                      )}
+                              <Ionicons
+                                name="create"
+                                size={20}
+                                color={COLORS.primary}
+                              />
+                              <Text style={styles.actionButtonText}>
+                                Check-in
+                              </Text>
+                            </TouchableOpacity>
+
+                            {/* Hide Báo cáo button if event is ongoing */}
+                            {!isEventOngoing(
+                              event.startTime,
+                              event.endTime
+                            ) && (
+                              <TouchableOpacity
+                                style={styles.actionButton}
+                                onPress={() =>
+                                  navigation.navigate("IncidentReport", {
+                                    eventId: event.id,
+                                    eventTitle: event.title,
+                                  })
+                                }
+                              >
+                                <Ionicons
+                                  name="warning"
+                                  size={20}
+                                  color={COLORS.warning}
+                                />
+                                <Text
+                                  style={[
+                                    styles.actionButtonText,
+                                    { color: COLORS.warning },
+                                  ]}
+                                >
+                                  Báo cáo
+                                </Text>
+                              </TouchableOpacity>
+                            )}
+                          </>
+                        )}
                     </View>
                   </TouchableOpacity>
                 ))}

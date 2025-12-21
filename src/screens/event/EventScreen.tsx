@@ -364,6 +364,13 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
     }
   };
 
+  const isEventOngoing = (startTime: string, endTime: string) => {
+    const now = new Date();
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    return now >= start && now <= end;
+  };
+
   const handleEventPress = (event: Event | StaffAssignedEvent) => {
     if (isStaff) {
       navigation.navigate("StaffEventDetail", { eventId: event.id });
@@ -544,8 +551,8 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
       </View>
 
       <View style={styles.cardFooter}>
-        {/* Hide Check-in and Báo cáo buttons for CANCELED events */}
-        {event.status !== "CANCELED" && (
+        {/* Hide Check-in and Báo cáo buttons for CANCELED and PENDING events */}
+        {event.status !== "CANCELED" && event.status !== "PENDING" && (
           <>
             {/* Hide Check-in button for online events */}
             {!event.isOnline && (
@@ -563,22 +570,25 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
               </TouchableOpacity>
             )}
 
-            <TouchableOpacity
-              style={[styles.actionButton, event.isOnline && { flex: 1 }]}
-              onPress={() =>
-                navigation.navigate("IncidentReport", {
-                  eventId: event.id,
-                  eventTitle: event.title,
-                })
-              }
-            >
-              <Ionicons name="warning" size={20} color={COLORS.warning} />
-              <Text
-                style={[styles.actionButtonText, { color: COLORS.warning }]}
+            {/* Hide Báo cáo button if event is ongoing */}
+            {!isEventOngoing(event.startTime, event.endTime) && (
+              <TouchableOpacity
+                style={[styles.actionButton, event.isOnline && { flex: 1 }]}
+                onPress={() =>
+                  navigation.navigate("IncidentReport", {
+                    eventId: event.id,
+                    eventTitle: event.title,
+                  })
+                }
               >
-                Báo cáo
-              </Text>
-            </TouchableOpacity>
+                <Ionicons name="warning" size={20} color={COLORS.warning} />
+                <Text
+                  style={[styles.actionButtonText, { color: COLORS.warning }]}
+                >
+                  Báo cáo
+                </Text>
+              </TouchableOpacity>
+            )}
           </>
         )}
       </View>
