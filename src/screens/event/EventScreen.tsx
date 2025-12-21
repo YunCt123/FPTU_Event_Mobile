@@ -38,7 +38,7 @@ const STATUS_COLORS: Record<EventStatus, string> = {
   PUBLISHED: "#4CAF50",
   DRAFT: "#FF9800",
   PENDING: "#2196F3",
-  CANCELLED: "#F44336",
+  CANCELED: "#F44336",
 };
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -355,7 +355,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
         return COLORS.success;
       case "DRAFT":
         return COLORS.warning;
-      case "CANCELLED":
+      case "CANCELED":
         return COLORS.error;
       case "PENDING":
         return "#2196F3";
@@ -544,36 +544,43 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
       </View>
 
       <View style={styles.cardFooter}>
-        {/* Hide Check-in button for online events */}
-        {!event.isOnline && (
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() =>
-              navigation.navigate("StaffScan", {
-                eventId: event.id,
-                eventTitle: event.title,
-              })
-            }
-          >
-            <Ionicons name="create" size={20} color={COLORS.primary} />
-            <Text style={styles.actionButtonText}>Check-in</Text>
-          </TouchableOpacity>
-        )}
+        {/* Hide Check-in and Báo cáo buttons for CANCELED events */}
+        {event.status !== "CANCELED" && (
+          <>
+            {/* Hide Check-in button for online events */}
+            {!event.isOnline && (
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() =>
+                  navigation.navigate("StaffScan", {
+                    eventId: event.id,
+                    eventTitle: event.title,
+                  })
+                }
+              >
+                <Ionicons name="create" size={20} color={COLORS.primary} />
+                <Text style={styles.actionButtonText}>Check-in</Text>
+              </TouchableOpacity>
+            )}
 
-        <TouchableOpacity
-          style={[styles.actionButton, event.isOnline && { flex: 1 }]}
-          onPress={() =>
-            navigation.navigate("IncidentReport", {
-              eventId: event.id,
-              eventTitle: event.title,
-            })
-          }
-        >
-          <Ionicons name="warning" size={20} color={COLORS.warning} />
-          <Text style={[styles.actionButtonText, { color: COLORS.warning }]}>
-            Báo cáo
-          </Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, event.isOnline && { flex: 1 }]}
+              onPress={() =>
+                navigation.navigate("IncidentReport", {
+                  eventId: event.id,
+                  eventTitle: event.title,
+                })
+              }
+            >
+              <Ionicons name="warning" size={20} color={COLORS.warning} />
+              <Text
+                style={[styles.actionButtonText, { color: COLORS.warning }]}
+              >
+                Báo cáo
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -719,7 +726,7 @@ const EventScreen: React.FC<EventScreenProps> = ({ navigation }) => {
           />
         )}
       </LinearGradient>
-      
+
       {/* Action Result Modal */}
       <ActionResultModal
         visible={modalVisible}

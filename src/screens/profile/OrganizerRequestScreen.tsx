@@ -83,7 +83,7 @@ const OrganizerRequestScreen: React.FC<Props> = ({ navigation }) => {
       quality: 0.8,
     });
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
+    if (!result.CANCELED && result.assets && result.assets.length > 0) {
       const uri = result.assets[0].uri;
       if (type === "logo") {
         setLogoLocalUri(uri);

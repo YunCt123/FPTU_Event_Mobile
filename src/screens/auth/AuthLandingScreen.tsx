@@ -107,10 +107,9 @@ const AuthLandingScreen: React.FC<AuthLandingScreenProps> = ({
           Alert.alert("Lỗi", "Không nhận được token từ Google");
         }
       } else if (result.type === "cancel") {
-        // User cancelled - không cần hiện alert
+        // User CANCELED - không cần hiện alert
       }
     } catch (error: any) {
-    
       Alert.alert(
         "Lỗi đăng nhập",
         error?.message || "Không thể đăng nhập bằng Google. Vui lòng thử lại."

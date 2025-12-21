@@ -66,7 +66,7 @@ const RegisterStudentCardScreen: React.FC<Props> = ({ navigation, route }) => {
       quality: 0.8,
     });
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
+    if (!result.CANCELED && result.assets && result.assets.length > 0) {
       const uri = result.assets[0].uri;
       setLocalImageUri(uri);
       setUploadedUrl(null); // reset URL nếu chọn lại ảnh

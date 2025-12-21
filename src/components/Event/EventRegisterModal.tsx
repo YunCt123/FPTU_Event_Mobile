@@ -216,7 +216,7 @@ const EventRegisterModal: React.FC<EventRegisterModalProps> = ({
   const onPinchStateChange = (event: PinchGestureHandlerStateChangeEvent) => {
     if (
       event.nativeEvent.state === State.END ||
-      event.nativeEvent.state === State.CANCELLED
+      event.nativeEvent.state === (State as any).CANCELED
     ) {
       lastScale.current *= event.nativeEvent.scale;
       lastScale.current = Math.min(Math.max(lastScale.current, 0.8), 3);
@@ -240,7 +240,7 @@ const EventRegisterModal: React.FC<EventRegisterModalProps> = ({
   const onPanStateChange = (event: PanGestureHandlerStateChangeEvent) => {
     if (
       event.nativeEvent.state === State.END ||
-      event.nativeEvent.state === State.CANCELLED
+      event.nativeEvent.state === (State as any).CANCELED
     ) {
       lastTranslateX.current += event.nativeEvent.translationX;
       lastTranslateY.current += event.nativeEvent.translationY;

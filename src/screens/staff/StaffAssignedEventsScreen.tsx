@@ -88,7 +88,7 @@ export default function StaffAssignedEventsScreen({
         return COLORS.success;
       case "DRAFT":
         return COLORS.warning;
-      case "CANCELLED":
+      case "CANCELED":
         return COLORS.error;
       default:
         return COLORS.text;
@@ -232,46 +232,53 @@ export default function StaffAssignedEventsScreen({
                     </View>
 
                     <View style={styles.cardFooter}>
-                      <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={() =>
-                          navigation.navigate("StaffScan", {
-                            eventId: event.id,
-                            eventTitle: event.title,
-                          })
-                        }
-                      >
-                        <Ionicons
-                          name="create"
-                          size={20}
-                          color={COLORS.primary}
-                        />
-                        <Text style={styles.actionButtonText}>Check-in</Text>
-                      </TouchableOpacity>
+                      {/* Hide Check-in and Báo cáo buttons for CANCELED events */}
+                      {event.status !== "CANCELED" && (
+                        <>
+                          <TouchableOpacity
+                            style={styles.actionButton}
+                            onPress={() =>
+                              navigation.navigate("StaffScan", {
+                                eventId: event.id,
+                                eventTitle: event.title,
+                              })
+                            }
+                          >
+                            <Ionicons
+                              name="create"
+                              size={20}
+                              color={COLORS.primary}
+                            />
+                            <Text style={styles.actionButtonText}>
+                              Check-in
+                            </Text>
+                          </TouchableOpacity>
 
-                      <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={() =>
-                          navigation.navigate("IncidentReport", {
-                            eventId: event.id,
-                            eventTitle: event.title,
-                          })
-                        }
-                      >
-                        <Ionicons
-                          name="warning"
-                          size={20}
-                          color={COLORS.warning}
-                        />
-                        <Text
-                          style={[
-                            styles.actionButtonText,
-                            { color: COLORS.warning },
-                          ]}
-                        >
-                          Báo cáo
-                        </Text>
-                      </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.actionButton}
+                            onPress={() =>
+                              navigation.navigate("IncidentReport", {
+                                eventId: event.id,
+                                eventTitle: event.title,
+                              })
+                            }
+                          >
+                            <Ionicons
+                              name="warning"
+                              size={20}
+                              color={COLORS.warning}
+                            />
+                            <Text
+                              style={[
+                                styles.actionButtonText,
+                                { color: COLORS.warning },
+                              ]}
+                            >
+                              Báo cáo
+                            </Text>
+                          </TouchableOpacity>
+                        </>
+                      )}
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -279,7 +286,7 @@ export default function StaffAssignedEventsScreen({
           )}
         </ScrollView>
       </LinearGradient>
-      
+
       {/* Action Result Modal */}
       <ActionResultModal
         visible={modalVisible}

@@ -26,14 +26,14 @@ type TicketScreenProps = {
 const STATUS_LABELS: Record<TicketStatus, string> = {
   VALID: "Có hiệu lực",
   USED: "Đã sử dụng",
-  CANCELLED: "Đã hủy",
+  CANCELED: "Đã hủy",
   EXPIRED: "Hết hạn",
 };
 
 const STATUS_COLORS: Record<TicketStatus, string> = {
   VALID: "#4CAF50",
   USED: "#9E9E9E",
-  CANCELLED: "#F44336",
+  CANCELED: "#F44336",
   EXPIRED: "#FF9800",
 };
 
@@ -226,7 +226,7 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
         return "ticket";
       case "USED":
         return "checkmark-circle";
-      case "CANCELLED":
+      case "CANCELED":
         return "close-circle";
       case "EXPIRED":
         return "time";
@@ -242,7 +242,7 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
       // Hiển thị tất cả vé đã sử dụng/hủy/hết hạn
       return (
         ticket.status === "USED" ||
-        ticket.status === "CANCELLED" ||
+        ticket.status === "CANCELED" ||
         ticket.status === "EXPIRED"
       );
     }
@@ -360,11 +360,11 @@ const TicketScreen: React.FC<TicketScreenProps> = ({ navigation }) => {
                       key={ticket.id}
                       style={[
                         styles.ticketCard,
-                        ticket.status === "CANCELLED" &&
+                        ticket.status === "CANCELED" &&
                           styles.ticketCardDisabled,
                       ]}
-                      activeOpacity={ticket.status === "CANCELLED" ? 1 : 0.7}
-                      disabled={ticket.status === "CANCELLED"}
+                      activeOpacity={ticket.status === "CANCELED" ? 1 : 0.7}
+                      disabled={ticket.status === "CANCELED"}
                       onPress={() => {
                         if (activeTab === "used") {
                           // Chỉ cho phép feedback nếu chưa feedback và vé đã USED

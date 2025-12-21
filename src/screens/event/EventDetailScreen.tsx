@@ -32,7 +32,7 @@ const STATUS_COLORS: Record<EventStatus, string> = {
   PUBLISHED: "#4CAF50",
   DRAFT: "#FF9800",
   PENDING: "#2196F3",
-  CANCELLED: "#F44336",
+  CANCELED: "#F44336",
 };
 
 const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
@@ -58,8 +58,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
           const user: User = JSON.parse(userStr);
           setUserRole(user.roleName);
         }
-      } catch (error) {
-      }
+      } catch (error) {}
     };
     loadUserRole();
   }, []);
@@ -459,23 +458,6 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
               </View>
             </View>
 
-            {/* Host/MC Card */}
-            <View style={styles.infoCard}>
-              <Text style={styles.cardTitle}>Người dẫn chương trình</Text>
-              <View style={styles.hostCard}>
-                <View style={styles.hostAvatarContainer}>
-                  <Ionicons name="mic" size={24} color={COLORS.white} />
-                </View>
-                <View style={styles.hostInfo}>
-                  <Text style={styles.hostName}>
-                    {event.host.firstName} {event.host.lastName}
-                  </Text>
-                  <Text style={styles.hostRole}>MC / Host</Text>
-                  <Text style={styles.hostContact}>@{event.host.userName}</Text>
-                </View>
-              </View>
-            </View>
-
             {/* Speakers Card */}
             {event.eventSpeakers && event.eventSpeakers.length > 0 && (
               <View style={styles.infoCard}>
@@ -841,43 +823,6 @@ const styles = StyleSheet.create({
   },
   organizerContent: {
     flex: 1,
-  },
-  // Host/MC styles
-  hostCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.md,
-    backgroundColor: COLORS.background,
-    padding: SPACING.md,
-    borderRadius: RADII.lg,
-  },
-  hostAvatarContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  hostInfo: {
-    flex: 1,
-  },
-  hostName: {
-    fontSize: FONTS.md,
-    fontWeight: "700",
-    color: COLORS.text,
-    marginBottom: 2,
-  },
-  hostRole: {
-    fontSize: FONTS.sm,
-    color: COLORS.primary,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  hostContact: {
-    fontSize: FONTS.xs,
-    color: COLORS.text,
-    opacity: 0.6,
   },
   // Speaker styles
   speakerCard: {

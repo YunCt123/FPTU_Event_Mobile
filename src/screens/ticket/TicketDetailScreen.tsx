@@ -16,7 +16,11 @@ import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { ticketService } from "../../services/ticketService";
 import { Ticket, TicketStatus } from "../../types/ticket";
 import { RootStackParamList } from "../../types/navigation";
-import { GradientButton, ActionResultModal, ActionResultType } from "../../components";
+import {
+  GradientButton,
+  ActionResultModal,
+  ActionResultType,
+} from "../../components";
 
 type TicketDetailScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "TicketDetails">;
@@ -26,14 +30,14 @@ type TicketDetailScreenProps = {
 const STATUS_LABELS: Record<TicketStatus, string> = {
   VALID: "Có hiệu lực",
   USED: "Đã sử dụng",
-  CANCELLED: "Đã hủy",
+  CANCELED: "Đã hủy",
   EXPIRED: "Hết hạn",
 };
 
 const STATUS_COLORS: Record<TicketStatus, string> = {
   VALID: "#4CAF50",
   USED: "#9E9E9E",
-  CANCELLED: "#F44336",
+  CANCELED: "#F44336",
   EXPIRED: "#FF9800",
 };
 
@@ -166,7 +170,9 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
                   { backgroundColor: STATUS_COLORS[ticket.status] },
                 ]}
               >
-                <Text style={styles.statusText}>{STATUS_LABELS[ticket.status]}</Text>
+                <Text style={styles.statusText}>
+                  {STATUS_LABELS[ticket.status]}
+                </Text>
               </View>
 
               {/* Event Title */}
@@ -189,12 +195,20 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
 
               {ticket.event.venue && (
                 <View style={styles.infoRow}>
-                  <Ionicons name="location-outline" size={20} color={COLORS.primary} />
+                  <Ionicons
+                    name="location-outline"
+                    size={20}
+                    color={COLORS.primary}
+                  />
                   <View style={styles.infoContent}>
                     <Text style={styles.infoLabel}>Địa điểm</Text>
-                    <Text style={styles.infoValue}>{ticket.event.venue.name}</Text>
+                    <Text style={styles.infoValue}>
+                      {ticket.event.venue.name}
+                    </Text>
                     {ticket.event.venue.location && (
-                      <Text style={styles.infoSubValue}>{ticket.event.venue.location}</Text>
+                      <Text style={styles.infoSubValue}>
+                        {ticket.event.venue.location}
+                      </Text>
                     )}
                   </View>
                 </View>
@@ -368,7 +382,7 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({
           </View>
         )}
       </LinearGradient>
-      
+
       {/* Action Result Modal */}
       <ActionResultModal
         visible={modalVisible}

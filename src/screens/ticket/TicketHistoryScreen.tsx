@@ -93,7 +93,7 @@ export default function TicketHistoryScreen({
         return COLORS.success;
       case "USED":
         return COLORS.primary;
-      case "CANCELLED":
+      case "CANCELED":
         return COLORS.error;
       case "EXPIRED":
         return COLORS.textSecondary;
@@ -108,7 +108,7 @@ export default function TicketHistoryScreen({
         return "Còn hiệu lực";
       case "USED":
         return "Đã tham dự";
-      case "CANCELLED":
+      case "CANCELED":
         return "Đã hủy";
       case "EXPIRED":
         return "Hết hạn";
@@ -123,7 +123,7 @@ export default function TicketHistoryScreen({
         return "checkmark-circle";
       case "USED":
         return "checkmark-done-circle";
-      case "CANCELLED":
+      case "CANCELED":
         return "close-circle";
       case "EXPIRED":
         return "time";
@@ -174,7 +174,7 @@ export default function TicketHistoryScreen({
     } else if (
       ticket.status === "USED" ||
       ticket.status === "EXPIRED" ||
-      ticket.status === "CANCELLED"
+      ticket.status === "CANCELED"
     ) {
       // Nếu vé đã sử dụng nhưng chưa feedback, navigate sang FeedbackEvent
       navigation.navigate("FeedbackEvent", {
@@ -301,7 +301,8 @@ export default function TicketHistoryScreen({
                             color={COLORS.textSecondary}
                           />
                           <Text style={styles.infoText}>
-                            Đăng ký: {formatDate(ticket.bookingDate)} - {formatTime(ticket.bookingDate)}
+                            Đăng ký: {formatDate(ticket.bookingDate)} -{" "}
+                            {formatTime(ticket.bookingDate)}
                           </Text>
                         </View>
                       )}
@@ -343,7 +344,7 @@ export default function TicketHistoryScreen({
           )}
         </ScrollView>
       </LinearGradient>
-      
+
       {/* Action Result Modal */}
       <ActionResultModal
         visible={modalVisible}

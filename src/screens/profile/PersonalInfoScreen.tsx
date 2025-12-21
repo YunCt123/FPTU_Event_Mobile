@@ -18,7 +18,11 @@ import * as ImagePicker from "expo-image-picker";
 import { COLORS, SPACING, FONTS, RADII, SHADOWS } from "../../utils/theme";
 import { authService } from "../../services/authService";
 import { User, UpdateUserProfileRequest } from "../../types/user";
-import { GradientButton, ActionResultModal, ActionResultType } from "../../components";
+import {
+  GradientButton,
+  ActionResultModal,
+  ActionResultType,
+} from "../../components";
 import { CLOUDINARY_CONFIG } from "../../config/cloudinary";
 
 type PersonalInfoScreenProps = {
@@ -57,7 +61,7 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
       setLoading(true);
       const data = await authService.getCurrentUser();
       setUser(data);
-      
+
       // Populate form fields
       setUserName(data.userName);
       setFirstName(data.firstName);
@@ -81,7 +85,9 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
     if (status !== "granted") {
       setModalType("warning");
       setModalTitle("Quyền truy cập");
-      setModalMessage("Ứng dụng cần quyền truy cập thư viện ảnh để thay đổi avatar.");
+      setModalMessage(
+        "Ứng dụng cần quyền truy cập thư viện ảnh để thay đổi avatar."
+      );
       setModalVisible(true);
       return;
     }
@@ -93,7 +99,7 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
       quality: 0.8,
     });
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
+    if (!result.CANCELED && result.assets && result.assets.length > 0) {
       const uri = result.assets[0].uri;
       setLocalImageUri(uri);
       await uploadToCloudinary(uri);
@@ -109,7 +115,9 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
     ) {
       setModalType("error");
       setModalTitle("Lỗi cấu hình");
-      setModalMessage("Chưa cấu hình Cloudinary. Hãy cập nhật trong file config/cloudinary.ts.");
+      setModalMessage(
+        "Chưa cấu hình Cloudinary. Hãy cập nhật trong file config/cloudinary.ts."
+      );
       setModalVisible(true);
       return;
     }
@@ -257,7 +265,9 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
                   )}
                 </View>
               </TouchableOpacity>
-              <Text style={styles.avatarHint}>Nhấn để thay đổi ảnh đại diện</Text>
+              <Text style={styles.avatarHint}>
+                Nhấn để thay đổi ảnh đại diện
+              </Text>
             </View>
 
             {/* Form */}
@@ -331,7 +341,11 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
                 <Text style={styles.sectionTitle}>Thông tin khác</Text>
 
                 <View style={styles.infoRow}>
-                  <Ionicons name="mail-outline" size={20} color={COLORS.primary} />
+                  <Ionicons
+                    name="mail-outline"
+                    size={20}
+                    color={COLORS.primary}
+                  />
                   <View style={styles.infoContent}>
                     <Text style={styles.infoLabel}>Email</Text>
                     <Text style={styles.infoValue}>{user?.email}</Text>
@@ -341,7 +355,11 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
                 <View style={styles.divider} />
 
                 <View style={styles.infoRow}>
-                  <Ionicons name="business-outline" size={20} color={COLORS.primary} />
+                  <Ionicons
+                    name="business-outline"
+                    size={20}
+                    color={COLORS.primary}
+                  />
                   <View style={styles.infoContent}>
                     <Text style={styles.infoLabel}>Cơ sở</Text>
                     <Text style={styles.infoValue}>{user?.campus?.name}</Text>
@@ -379,7 +397,7 @@ const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
           </View>
         </KeyboardAvoidingView>
       </LinearGradient>
-      
+
       {/* Action Result Modal */}
       <ActionResultModal
         visible={modalVisible}

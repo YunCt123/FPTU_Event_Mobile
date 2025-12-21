@@ -36,7 +36,7 @@ export interface EventSpeaker {
   speaker: Speaker;
 }
 
-export type EventStatus = "PUBLISHED" | "DRAFT" | "CANCELLED" | "PENDING";
+export type EventStatus = "PUBLISHED" | "DRAFT" | "CANCELED" | "PENDING";
 
 export type RecurrenceType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY";
 

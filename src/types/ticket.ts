@@ -1,7 +1,7 @@
 import { Event } from "./event";
 import { User } from "./user";
 
-export type TicketStatus = "VALID" | "USED" | "CANCELLED" | "EXPIRED";
+export type TicketStatus = "VALID" | "USED" | "CANCELED" | "EXPIRED";
 export type SeatType = "standard";
 export type EventStatus = "PUBLISHED";
 

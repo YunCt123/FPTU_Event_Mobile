@@ -175,7 +175,7 @@ export default function IncidentReportScreen({
             quality: 0.8,
           });
 
-      if (!result.canceled && result.assets && result.assets.length > 0) {
+      if (!result.CANCELED && result.assets && result.assets.length > 0) {
         const uri = result.assets[0].uri;
         setIncidentImage(uri);
         // Await upload to ensure we have the URL before allowing submit
