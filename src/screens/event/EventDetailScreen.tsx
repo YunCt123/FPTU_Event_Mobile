@@ -28,13 +28,6 @@ type EventDetailScreenProps = {
   route: RouteProp<RootStackParamList, "EventDetails">;
 };
 
-const STATUS_COLORS: Record<EventStatus, string> = {
-  PUBLISHED: "#4CAF50",
-  DRAFT: "#FF9800",
-  PENDING: "#2196F3",
-  CANCELED: "#F44336",
-};
-
 const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
   navigation,
   route,
@@ -238,15 +231,17 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({
 
           {/* Event Content */}
           <View style={styles.content}>
-            {/* Status Badge */}
-            <View
-              style={[
-                styles.statusBadge,
-                { backgroundColor: STATUS_COLORS[event.status] },
-              ]}
-            >
-              <Text style={styles.statusText}>{event.status}</Text>
-            </View>
+            {/* Category Badge */}
+            {event.category && (
+              <View style={styles.categoryBadge}>
+                <Ionicons
+                  name="pricetag-outline"
+                  size={14}
+                  color={COLORS.primary}
+                />
+                <Text style={styles.categoryText}>{event.category}</Text>
+              </View>
+            )}
 
             {/* Event Title */}
             <Text style={styles.eventTitle}>{event.title}</Text>
@@ -650,15 +645,22 @@ const styles = StyleSheet.create({
   content: {
     padding: SPACING.md,
   },
-  statusBadge: {
-    alignSelf: "flex-start",
+  categoryBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.xs,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.xs,
     borderRadius: RADII.xl,
+    backgroundColor: COLORS.white,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
     marginBottom: SPACING.md,
+    alignSelf: "flex-start",
+    ...SHADOWS.sm,
   },
-  statusText: {
-    color: "#FFFFFF",
+  categoryText: {
+    color: COLORS.primary,
     fontSize: FONTS.sm,
     fontWeight: "600",
   },
